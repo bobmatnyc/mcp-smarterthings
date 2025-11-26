@@ -1,5 +1,5 @@
 {
-  "name": "@masa/mcp-smartthings",
+  "name": "@bobmatnyc/mcp-smartthings",
   "version": "1.0.0",
   "description": "Model Context Protocol (MCP) server for SmartThings home automation",
   "type": "module",

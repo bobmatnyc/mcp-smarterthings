@@ -1,0 +1,76 @@
+# Development and tooling
+.claude/
+.claude-mpm/
+.vscode/
+.idea/
+
+# Source files (we publish dist/ instead)
+src/
+tests/
+tools/
+
+# Test and development files
+*.test.ts
+*.test.js
+test_*.sh
+vitest.config.ts
+tsconfig.json
+coverage/
+.nyc_output/
+
+# Documentation (keep README.md, CHANGELOG.md)
+docs/
+*.md
+!README.md
+!CHANGELOG.md
+
+# Configuration files
+.eslintrc.json
+.prettierrc
+.versionrc.json
+.mcp.json
+
+# Prompts directory
+prompts/
+
+# Build artifacts not needed
+*.d.ts.map
+
+# Version control
+.git/
+.gitignore
+.gitattributes
+
+# Dependencies
+node_modules/
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# MCP and database files
+.mcp-ticketer/
+.mcp-vector-search/
+.kuzu-memory/
+kuzu-memories/
+*.db
+*.sqlite
+*.sqlite3
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+*.bak
+*.backup
+*.old
