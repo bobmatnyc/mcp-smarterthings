@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [1.0.2](https://github.com/bobmatnyc/mcp-smarterthings/compare/v1.0.1...v1.0.2) (2025-11-26)
+
+
+### Bug Fixes
+
+* resolve 14 critical errors blocking release ([f109465](https://github.com/bobmatnyc/mcp-smarterthings/commit/f109465bfb1d2f06bc92bc03bc53a9d740810898))
+
 ### [1.0.1](https://github.com/bobmatnyc/mcp-smarterthings/compare/v1.0.0...v1.0.1) (2025-11-26)
 
 ## [1.0.0] - 2025-11-25
