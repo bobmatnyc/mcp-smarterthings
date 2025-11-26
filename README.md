@@ -8,11 +8,49 @@ A Model Context Protocol (MCP) server that provides LLM-driven control and autom
 - **Device Discovery**: List all devices and their capabilities
 - **Scene Management**: List and execute SmartThings scenes
 - **Room Organization**: Filter devices and scenes by room
+- **Unified Capability System**: Platform-agnostic abstraction for SmartThings, Tuya, and Lutron devices
 - **Type-Safe**: Built with TypeScript 5.6+ strict mode and branded types
 - **Resilient**: Automatic retry with exponential backoff for API failures
 - **MCP Protocol**: Full compliance with MCP SDK 1.22.0
 - **Multiple Transports**: Stdio (CLI) and HTTP/SSE (web)
 - **Structured Logging**: Winston with JSON format for production monitoring
+
+### Unified Capability System
+
+The MCP SmartThings server includes a comprehensive **platform-agnostic capability system** that normalizes device capabilities across SmartThings, Tuya, Lutron, and future platforms.
+
+**Key Features:**
+- **31 Unified Capabilities**: Control (11), Sensor (15), and Composite (5) capabilities
+- **3 Platform Support**: SmartThings (100%), Tuya (96%), Lutron (19%)
+- **Automatic Value Conversion**: Brightness, color, and format normalization across platforms
+- **Runtime Capability Detection**: Type-safe capability queries and feature detection
+- **Bidirectional Mapping**: Seamless translation between platform-specific and unified formats
+
+**Quick Example:**
+```typescript
+import { DeviceCapability, hasCapability } from './types/unified-device.js';
+
+// Check if device supports dimming (works across all platforms)
+if (hasCapability(device, DeviceCapability.DIMMER)) {
+  // Set brightness to 50% - automatically converts to platform format
+  // Tuya: 500 (0-1000 scale)
+  // SmartThings: 50 (0-100 scale)
+  // Lutron: 50.00 (precision format)
+  await device.capabilities.dimmer.commands.setLevel(50);
+}
+```
+
+**Documentation:**
+- **[Capability Mapping Guide](docs/capability-mapping-guide.md)** - Comprehensive reference with all 31 capabilities, platform mappings, and conversion rules
+- **[Quick Reference Card](docs/capability-quick-reference.md)** - Cheat sheet for common operations and conversions
+
+**Platform Coverage:**
+
+| Platform | Capabilities | Notable Features |
+|----------|-------------|------------------|
+| **SmartThings** | 31/31 (100%) | Full smart home automation |
+| **Tuya** | 30/31 (96%) | Wide device availability (missing OCCUPANCY_SENSOR) |
+| **Lutron** | 6/31 (19%) | Premium lighting specialist (SWITCH, DIMMER, SHADE, FAN) |
 
 ## Prerequisites
 
@@ -792,6 +830,10 @@ tools/
 ## Documentation
 
 Comprehensive documentation is available in the [docs/](docs/) directory:
+
+- **[Capability System](docs/)** - Platform abstraction and capability mapping
+  - **[Capability Mapping Guide](docs/capability-mapping-guide.md)** - Complete reference for all 31 capabilities, platform mappings, and value conversions
+  - **[Quick Reference Card](docs/capability-quick-reference.md)** - Cheat sheet for common operations and platform support
 
 - **[Setup Guides](docs/setup/)** - Installation and configuration
   - [Alexa Quick Start](docs/setup/ALEXA_CUSTOM_SKILL_QUICK_START.md)
