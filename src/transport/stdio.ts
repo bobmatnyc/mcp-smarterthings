@@ -21,15 +21,13 @@ export async function startStdioTransport(server: Server): Promise<void> {
   logger.info('MCP server connected via stdio transport');
 
   // Handle graceful shutdown
-  process.on('SIGINT', async () => {
+  process.on('SIGINT', () => {
     logger.info('Received SIGINT, shutting down stdio transport');
-    await server.close();
-    process.exit(0);
+    void server.close().finally(() => process.exit(0));
   });
 
-  process.on('SIGTERM', async () => {
+  process.on('SIGTERM', () => {
     logger.info('Received SIGTERM, shutting down stdio transport');
-    await server.close();
-    process.exit(0);
+    void server.close().finally(() => process.exit(0));
   });
 }

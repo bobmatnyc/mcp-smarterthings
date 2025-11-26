@@ -71,12 +71,13 @@ export async function startHttpTransport(server: Server): Promise<void> {
   });
 
   // Graceful shutdown
-  const shutdown = async (): Promise<void> => {
+  const shutdown = (): void => {
     logger.info('Shutting down HTTP server');
-    await server.close();
-    httpServer.close(() => {
-      logger.info('HTTP server closed');
-      process.exit(0);
+    void server.close().finally(() => {
+      httpServer.close(() => {
+        logger.info('HTTP server closed');
+        process.exit(0);
+      });
     });
   };
 

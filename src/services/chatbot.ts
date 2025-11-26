@@ -253,10 +253,9 @@ export class ChatbotService implements IChatbotService {
    */
   private setupSignalHandlers(): void {
     // Handle Ctrl+C
-    this.rl?.on('SIGINT', async () => {
+    this.rl?.on('SIGINT', () => {
       this.displayInfo('\nReceived Ctrl+C, exiting...');
-      await this.stop();
-      process.exit(0);
+      void this.stop().finally(() => process.exit(0));
     });
   }
 

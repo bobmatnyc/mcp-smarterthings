@@ -82,7 +82,7 @@ export async function retryWithBackoff<T>(
     }
   }
 
-  throw lastError;
+  throw lastError ?? new Error('Retry failed: no error details available');
 }
 
 /**
