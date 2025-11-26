@@ -1,32 +1,70 @@
 # MCP SmartThings Server
 
-A Model Context Protocol (MCP) server that provides LLM-driven control and automation for SmartThings home automation systems. Built with TypeScript and the official SmartThings SDK.
+> **Unified Smart Home Control Platform**
+> A dual-mode server providing both Model Context Protocol (MCP) integration for AI assistants and Alexa Custom Skill support, with a powerful unified capability system for cross-platform device management.
 
-## Features
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.6%2B-blue)](https://www.typescriptlang.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-18%2B-green)](https://nodejs.org/)
 
-- **Device Control**: Turn devices on/off, get status
-- **Device Discovery**: List all devices and their capabilities
-- **Scene Management**: List and execute SmartThings scenes
-- **Room Organization**: Filter devices and scenes by room
-- **Unified Capability System**: Platform-agnostic abstraction for SmartThings, Tuya, and Lutron devices
-- **Type-Safe**: Built with TypeScript 5.6+ strict mode and branded types
-- **Resilient**: Automatic retry with exponential backoff for API failures
-- **MCP Protocol**: Full compliance with MCP SDK 1.22.0
-- **Multiple Transports**: Stdio (CLI) and HTTP/SSE (web)
-- **Structured Logging**: Winston with JSON format for production monitoring
+---
 
-### Unified Capability System
+## 🎯 What is mcp-smartthings?
 
-The MCP SmartThings server includes a comprehensive **platform-agnostic capability system** that normalizes device capabilities across SmartThings, Tuya, Lutron, and future platforms.
+**mcp-smartthings** is a comprehensive smart home integration server that bridges AI assistants and voice assistants with your home automation devices. It provides:
+
+- 🤖 **MCP Server** for Claude AI and other LLM-based assistants
+- 🗣️ **Alexa Custom Skill** for natural language voice control
+- 🔄 **Unified Capability System** normalizing SmartThings, Tuya, and Lutron devices
+- 🛡️ **Type-Safe Architecture** with TypeScript strict mode and branded types
+- ⚡ **Production-Ready** with automatic retries, structured logging, and comprehensive testing
+
+**Use Cases:**
+- Control your smart home through Claude Desktop using natural language
+- Build custom automation workflows with AI assistance
+- Voice control via Alexa with conversational AI (LLM-powered responses)
+- Manage devices across multiple platforms (SmartThings, Tuya, Lutron) with a single interface
+- Develop smart home applications with a type-safe, well-documented API
+
+---
+
+## ✨ Features
+
+### 🤖 MCP Server Capabilities
+- **Device Discovery & Control** - List, query, and control all SmartThings devices
+- **Scene Management** - Execute and manage SmartThings scenes
+- **Room Organization** - Filter devices and scenes by room/location
+- **Real-Time Status** - Get current device states and sensor readings
+- **Multiple Transports** - Supports stdio (CLI) and HTTP/SSE (web)
+- **MCP Protocol 1.22.0** - Full compliance with latest MCP specification
+
+### 🗣️ Alexa Integration
+- **Custom Skill Support** - Natural language voice control powered by LLM
+- **Conversational AI** - Context-aware responses via ChatOrchestrator
+- **MCP Tool Execution** - Alexa requests execute MCP tools under the hood
+- **Easy Setup** - Quick deployment with ngrok for development/testing
+
+### 🔄 Unified Capability System
+
+The heart of mcp-smartthings is a **platform-agnostic capability abstraction** that normalizes device control across multiple smart home platforms:
 
 **Key Features:**
-- **31 Unified Capabilities**: Control (11), Sensor (15), and Composite (5) capabilities
-- **3 Platform Support**: SmartThings (100%), Tuya (96%), Lutron (19%)
-- **Automatic Value Conversion**: Brightness, color, and format normalization across platforms
-- **Runtime Capability Detection**: Type-safe capability queries and feature detection
-- **Bidirectional Mapping**: Seamless translation between platform-specific and unified formats
+- **31 Unified Capabilities** - 11 Control + 15 Sensor + 5 Composite capabilities
+- **3 Platform Support** - SmartThings (100%), Tuya (96%), Lutron (19%)
+- **Automatic Value Conversion** - Brightness, color, and format normalization
+- **Runtime Detection** - Type-safe capability queries and feature detection
+- **Bidirectional Mapping** - Seamless platform ↔ unified format translation
+- **Event-Based Architecture** - Support for real-time device events
 
-**Quick Example:**
+**Platform Coverage:**
+
+| Platform | Capabilities | Coverage | Notable Features |
+|----------|-------------|----------|------------------|
+| **SmartThings** | 31/31 | 100% | Full smart home automation ecosystem |
+| **Tuya** | 30/31 | 96% | Wide device availability (missing OCCUPANCY_SENSOR) |
+| **Lutron** | 6/31 | 19% | Premium lighting and shading specialist |
+
+**Example Usage:**
 ```typescript
 import { DeviceCapability, hasCapability } from './types/unified-device.js';
 
@@ -40,26 +78,101 @@ if (hasCapability(device, DeviceCapability.DIMMER)) {
 }
 ```
 
-**Documentation:**
-- **[Capability Mapping Guide](docs/capability-mapping-guide.md)** - Comprehensive reference with all 31 capabilities, platform mappings, and conversion rules
-- **[Quick Reference Card](docs/capability-quick-reference.md)** - Cheat sheet for common operations and conversions
+### 🛡️ Developer Experience
+- **TypeScript 5.6+** - Strict mode with branded types for domain safety
+- **Comprehensive Testing** - Unit, integration, and E2E test suites
+- **Rich Documentation** - Extensive guides, API references, and examples
+- **Developer Tools** - Interactive REPL, MCP Inspector, shell helpers
+- **Structured Logging** - Winston with JSON format for production monitoring
+- **Error Handling** - Resilient with automatic retry and exponential backoff
 
-**Platform Coverage:**
+---
 
-| Platform | Capabilities | Notable Features |
-|----------|-------------|------------------|
-| **SmartThings** | 31/31 (100%) | Full smart home automation |
-| **Tuya** | 30/31 (96%) | Wide device availability (missing OCCUPANCY_SENSOR) |
-| **Lutron** | 6/31 (19%) | Premium lighting specialist (SWITCH, DIMMER, SHADE, FAN) |
+## 🏗️ Architecture Overview
 
-## Prerequisites
+### System Architecture
 
-- **Node.js**: 18.0.0 or higher
-- **pnpm**: 9.0.0 or higher (recommended package manager)
-- **SmartThings Account**: With at least one device configured
-- **SmartThings Personal Access Token (PAT)**: Required for API authentication
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     Client Layer                            │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐     │
+│  │ Claude AI    │  │ Alexa Skill  │  │ Custom Apps  │     │
+│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘     │
+└─────────┼──────────────────┼──────────────────┼─────────────┘
+          │                  │                  │
+          │ MCP Protocol     │ Custom Skill     │ HTTP/SSE
+          │                  │ API              │
+┌─────────▼──────────────────▼──────────────────▼─────────────┐
+│                    MCP SmartThings Server                    │
+│  ┌────────────────────────────────────────────────────────┐ │
+│  │              MCP Tools & Endpoints                     │ │
+│  │  • Device Control  • Scene Management  • Status Query │ │
+│  └────────────────────────────────────────────────────────┘ │
+│  ┌────────────────────────────────────────────────────────┐ │
+│  │            Layer 2: Unified Capabilities               │ │
+│  │  • Type-Safe Interfaces  • Value Conversion           │ │
+│  │  • Runtime Detection     • Event Handling             │ │
+│  └────────────────────────────────────────────────────────┘ │
+│  ┌────────────────────────────────────────────────────────┐ │
+│  │            Layer 1: Platform Adapters                  │ │
+│  │  ┌──────────────┐ ┌──────────────┐ ┌──────────────┐  │ │
+│  │  │ SmartThings  │ │     Tuya     │ │    Lutron    │  │ │
+│  │  │   Adapter    │ │   Adapter    │ │   Adapter    │  │ │
+│  │  └──────────────┘ └──────────────┘ └──────────────┘  │ │
+│  └────────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────┘
+          │                  │                  │
+          ▼                  ▼                  ▼
+┌─────────────────────────────────────────────────────────────┐
+│                  Smart Home Platforms                        │
+│  ┌──────────────┐ ┌──────────────┐ ┌──────────────┐        │
+│  │ SmartThings  │ │  Tuya Cloud  │ │Lutron Caséta │        │
+│  │     API      │ │     API      │ │     API      │        │
+│  └──────────────┘ └──────────────┘ └──────────────┘        │
+└─────────────────────────────────────────────────────────────┘
+```
 
-## Getting Started
+### Layer 2 Abstraction: Unified Capabilities
+
+The **Layer 2 abstraction** provides a platform-agnostic interface for device control:
+
+**Core Components:**
+- **Capability Definitions** - 31 standardized capabilities (Switch, Dimmer, Thermostat, etc.)
+- **Value Converters** - Automatic normalization of brightness, temperature, color formats
+- **Type System** - TypeScript interfaces with branded types for compile-time safety
+- **Runtime Detection** - `hasCapability()` function for safe feature queries
+
+**Value Conversion Examples:**
+```typescript
+// Brightness (Dimmer capability)
+SmartThings: 0-100    →  Unified: 0-100  →  Tuya: 0-1000
+SmartThings: 75       →  Unified: 75     →  Tuya: 750
+
+// Color Temperature (Color Temperature capability)
+SmartThings: 2700K    →  Unified: 2700K  →  Tuya: 370 mireds
+Tuya: 370 mireds      →  Unified: 2700K  →  SmartThings: 2700K
+
+// Temperature (Temperature Measurement capability)
+SmartThings: 72°F     →  Unified: 22.2°C →  Tuya: 22.2°C
+```
+
+**Platform Registry:**
+The `PlatformRegistry` manages multiple platform adapters and routes requests to the appropriate platform based on device context.
+
+---
+
+## 📋 Prerequisites
+
+- **Node.js** 18.0.0 or higher
+- **pnpm** 9.0.0 or higher (recommended package manager)
+- **SmartThings Account** with at least one device configured
+- **SmartThings Personal Access Token (PAT)** - Required for API authentication
+- **OpenRouter API Key** (optional) - For chatbot interface
+- **ngrok Account** (optional) - For Alexa Custom Skill development
+
+---
+
+## 🚀 Getting Started
 
 ### 1. Installation
 
@@ -71,9 +184,7 @@ npm install -g pnpm
 pnpm install
 ```
 
-### 2. SmartThings Personal Access Token (PAT)
-
-To control your SmartThings devices, you need a Personal Access Token:
+### 2. Get SmartThings Personal Access Token (PAT)
 
 1. Go to [SmartThings Personal Access Tokens](https://account.smartthings.com/tokens)
 2. Click "Generate new token"
@@ -127,7 +238,101 @@ npm start
 
 The server will start with the configured transport mode (stdio or http).
 
-## Available MCP Tools
+---
+
+## 🎮 Usage Modes
+
+### Mode 1: MCP Server for Claude Desktop
+
+Configure Claude Desktop to use mcp-smartthings as an MCP server:
+
+**Add to your Claude Desktop config** (`~/Library/Application Support/Claude/claude_desktop_config.json` on macOS):
+
+```json
+{
+  "mcpServers": {
+    "smartthings": {
+      "command": "node",
+      "args": ["/absolute/path/to/mcp-smartthings/dist/index.js"],
+      "env": {
+        "SMARTTHINGS_PAT": "your_smartthings_token_here"
+      }
+    }
+  }
+}
+```
+
+**Example Conversation with Claude:**
+```
+You: Turn on the living room lights
+Claude: I'll turn on the living room lights for you.
+        [Uses turn_on_device tool]
+        ✓ Living room lights are now on.
+
+You: What devices are in my bedroom?
+Claude: Let me check your bedroom devices.
+        [Uses list_devices_by_room tool]
+        Found 3 devices in your bedroom:
+        - Bedroom Light (dimmable)
+        - Ceiling Fan
+        - Temperature Sensor
+```
+
+### Mode 2: Alexa Custom Skill
+
+Run the Alexa server to enable voice control:
+
+```bash
+# Start Alexa server
+pnpm alexa-server
+
+# In another terminal, expose via ngrok
+ngrok http 3000
+```
+
+**Configure Alexa Developer Console:**
+1. Create a new Custom Skill
+2. Set endpoint URL to your ngrok URL + `/alexa`
+3. Use provided intent schema
+4. Test with Alexa app or device
+
+**Example Voice Commands:**
+```
+"Alexa, ask SmartThings to turn on the living room lights"
+"Alexa, ask SmartThings what's the temperature in the bedroom"
+"Alexa, ask SmartThings to dim the kitchen lights to 30 percent"
+```
+
+See [Alexa Quick Start Guide](docs/setup/ALEXA_CUSTOM_SKILL_QUICK_START.md) for detailed setup.
+
+### Mode 3: Interactive Chatbot (Development)
+
+Run the built-in chatbot for testing:
+
+```bash
+# Start chatbot (requires OPENROUTER_API_KEY in .env.local)
+pnpm chat
+```
+
+**Configuration** (`.env.local`):
+```env
+SMARTTHINGS_PAT=your_smartthings_token_here
+OPENROUTER_API_KEY=sk-or-v1-your_openrouter_key_here
+```
+
+**Example Session:**
+```
+You: Turn on the living room lights
+Bot: I'll turn on the living room lights for you.
+     ✓ Device turned on successfully.
+
+You: What's the temperature in the bedroom?
+Bot: The bedroom temperature sensor reads 72°F (22°C).
+```
+
+---
+
+## 🔧 Available MCP Tools
 
 ### Device Control
 
@@ -206,13 +411,8 @@ Found 5 device(s):
   Capabilities: switch
 ```
 
-**Features:**
-- List all devices across all rooms (no parameters)
-- Filter devices by room name (shows only devices in that room)
-- Supports case-insensitive, partial room name matching
-
 #### `list_devices_by_room`
-List all SmartThings devices in a specific room. More explicit than `list_devices` with optional `roomName` parameter - use this when room filtering is required.
+List all SmartThings devices in a specific room.
 
 **Input:**
 ```json
@@ -220,30 +420,6 @@ List all SmartThings devices in a specific room. More explicit than `list_device
   "roomName": "Living Room"  // Required
 }
 ```
-
-**Output:**
-```
-Found 2 device(s) in room "Living Room":
-
-- Living Room Light (abc-123-...)
-  Type: LIGHT
-  Room: Living Room
-  Capabilities: switch, switchLevel
-
-- Living Room Thermostat (def-456-...)
-  Type: THERMOSTAT
-  Room: Living Room
-  Capabilities: temperatureMeasurement, thermostatMode
-```
-
-**Features:**
-- Dedicated room-specific tool with required parameter
-- Clearer API intent than optional parameter
-- Returns error if room not found or name is ambiguous
-- Supports case-insensitive, partial room name matching
-
-**Design Decision:**
-This tool provides better API design for room-specific queries by making the room parameter required. Use `list_devices_by_room` when you specifically want to filter by room, and `list_devices` when you want flexibility of optional filtering or listing all devices.
 
 #### `get_device_capabilities`
 Get the capabilities supported by a specific SmartThings device.
@@ -288,7 +464,7 @@ Found 3 room(s):
 ### Scene Management
 
 #### `list_scenes`
-List all SmartThings scenes accessible with the configured token. Optionally filter by room name to show scenes in that location.
+List all SmartThings scenes accessible with the configured token. Optionally filter by room name.
 
 **Input:**
 ```json
@@ -308,16 +484,8 @@ Found 2 scene(s) in location for room "Living Room":
   Last Executed: 11/25/2025, 7:00:00 AM
 ```
 
-**Features:**
-- List all scenes across all locations (no parameters)
-- Filter scenes by room name (shows scenes in that room's location)
-- Shows scene icons, names, and last execution time
-- Supports case-insensitive, partial room name matching
-
-**Note:** SmartThings API scenes are filtered by location, not room. When you provide a room name, the tool finds the room and returns all scenes in that room's location.
-
 #### `list_scenes_by_room`
-List all SmartThings scenes for a specific room. More explicit than `list_scenes` with optional `roomName` parameter - use this when room filtering is required.
+List all SmartThings scenes for a specific room.
 
 **Input:**
 ```json
@@ -326,44 +494,20 @@ List all SmartThings scenes for a specific room. More explicit than `list_scenes
 }
 ```
 
-**Output:**
-```
-Found 2 scene(s) in location for room "Living Room":
-
-- Movie Night 🎬 (scene-uuid-1)
-  Last Executed: 11/24/2025, 8:30:00 PM
-
-- Bright Lights 💡 (scene-uuid-2)
-  Last Executed: 11/24/2025, 6:00:00 PM
-```
-
-**Features:**
-- Dedicated room-specific tool with required parameter
-- Clearer API intent than optional parameter
-- Returns error if room not found or name is ambiguous
-- Supports case-insensitive, partial room name matching
-- Shows all scenes in the location for the specified room
-
-**Design Decision:**
-This tool provides better API design for room-specific queries by making the room parameter required. Use `list_scenes_by_room` when you specifically want to filter by room, and `list_scenes` when you want flexibility of optional filtering or listing all scenes.
-
-**Technical Note:** SmartThings API scenes are organized by location, not room. This tool resolves the room to its location, then returns all scenes in that location.
-
 #### `execute_scene`
 Execute a SmartThings scene by ID or name.
 
-**Input:**
+**Input (by UUID):**
 ```json
 {
-  "sceneId": "scene-uuid-here"  // Option 1: Use UUID
+  "sceneId": "scene-uuid-here"
 }
 ```
 
-Or:
-
+**Input (by name):**
 ```json
 {
-  "sceneName": "Movie Night"  // Option 2: Use name (case-insensitive)
+  "sceneName": "Movie Night"  // Case-insensitive
 }
 ```
 
@@ -373,63 +517,168 @@ Scene "Movie Night" executed successfully.
 Scene ID: scene-uuid-here
 ```
 
-**Features:**
-- Execute by UUID (faster, direct execution)
-- Execute by name (convenient, supports partial matching)
-- Case-insensitive name matching
-- Returns execution confirmation with scene details
+---
 
-## Usage with Interactive Chatbot
+## 🧪 Testing
 
-The MCP SmartThings server includes a built-in chatbot that provides a natural language interface for controlling your devices. The chatbot connects to the MCP server via the MCP protocol, validating that the server works correctly while providing an intuitive user experience.
+The project provides comprehensive testing tools:
 
-### Quick Start
+### 1. MCP Inspector (Recommended)
+
+Visual GUI for testing MCP tools:
 
 ```bash
-# Build the project
 pnpm build
-
-# Start chatbot (ensure .env.local is configured)
-pnpm chat
+pnpm test:inspector
 ```
 
-### Configuration
+Opens at `http://localhost:6274` with:
+- Visual interface for testing tools
+- JSON-RPC request/response viewer
+- Real device testing
+- Schema validation
 
-The chatbot requires two environment variables in `.env.local`:
+### 2. Interactive Test Gateway (CLI REPL)
 
-```env
-# SmartThings Personal Access Token (required)
-SMARTTHINGS_PAT=your_smartthings_token_here
+Command-line REPL for testing:
 
-# OpenRouter API Key (required for LLM access)
-OPENROUTER_API_KEY=sk-or-v1-your_openrouter_key_here
+```bash
+pnpm test-gateway
 ```
 
-**Getting an OpenRouter API Key:**
-
-1. Visit [OpenRouter](https://openrouter.ai/)
-2. Sign up for a free account
-3. Navigate to API Keys section
-4. Generate a new API key
-5. Add to `.env.local`
-
-**Free Tier Models:**
-- `deepseek/deepseek-chat` (default) - Free, fast, good for home automation
-- Other free models available at [OpenRouter Models](https://openrouter.ai/models)
-
-### Using the Chatbot
-
-Once started, you can control your devices using natural language:
-
+**Available Commands:**
 ```
-You: Turn on the living room lights
-├── package.json
-├── tsconfig.json
-├── vitest.config.ts
-└── README.md
+mcp> connect              # Connect to MCP server
+mcp> devices              # List all devices
+mcp> status <deviceId>    # Get device status
+mcp> on <deviceId>        # Turn device on
+mcp> off <deviceId>       # Turn device off
+mcp> help                 # Show commands
+mcp> exit                 # Exit gateway
 ```
 
-## Development
+### 3. Unit & Integration Tests
+
+Automated test suites:
+
+```bash
+# Run all tests
+pnpm test
+
+# Run unit tests only
+pnpm test:unit
+
+# Run integration tests (requires built server)
+pnpm build
+pnpm test:integration
+
+# Run tests with coverage
+pnpm test:coverage
+```
+
+### 4. Shell Helper Functions
+
+Quick one-liners for scripting:
+
+```bash
+source tools/test-helpers.sh
+
+# List devices
+st_list_devices
+
+# Control a device
+st_turn_on "abc-123-device-id"
+st_turn_off "abc-123-device-id"
+
+# Run full test suite
+mcp_test_all
+```
+
+See [Testing Quick Start](docs/testing/TESTING_QUICK_START.md) for comprehensive testing guide.
+
+---
+
+## 📚 Documentation
+
+Comprehensive documentation is available in the [docs/](docs/) directory:
+
+### Capability System
+- **[Capability Mapping Guide](docs/capability-mapping-guide.md)** - Complete reference for all 31 capabilities, platform mappings, and value conversions
+- **[Quick Reference Card](docs/capability-quick-reference.md)** - Cheat sheet for common operations and platform support
+
+### Setup & Configuration
+- **[Alexa Quick Start](docs/setup/ALEXA_CUSTOM_SKILL_QUICK_START.md)** - Set up Alexa Custom Skill integration
+- **[Diagnostic Tools Setup](docs/setup/DIAGNOSTIC_TOOLS_GUIDE.md)** - Configure diagnostic and debugging tools
+- **[ngrok Configuration](docs/setup/NGROK_QUICKSTART.md)** - Set up ngrok for local development
+
+### Implementation Guides
+- **[Alexa Custom Skill](docs/implementation/ALEXA_CUSTOM_SKILL_IMPLEMENTATION.md)** - Detailed Alexa integration guide
+- **[Chatbot Interface](docs/implementation/CHATBOT_IMPLEMENTATION.md)** - Build chatbot interfaces
+- **[Diagnostic Tools](docs/implementation/DIAGNOSTIC_TOOLS_IMPLEMENTATION.md)** - Diagnostic tool development
+
+### Testing & Quality
+- **[Testing Quick Start](docs/testing/TESTING_QUICK_START.md)** - Quick start testing guide
+- **[Verification Checklist](docs/testing/VERIFICATION_CHECKLIST.md)** - Pre-release verification steps
+- **[QA Reports](docs/qa/)** - Quality assurance documentation
+
+### Research & Architecture
+- **[Research](docs/research/)** - Technical research and analysis documents
+
+For a complete index, see [docs/README.md](docs/README.md).
+
+---
+
+## 🎯 Key Differentiators
+
+### What Makes mcp-smartthings Unique?
+
+1. **Dual-Mode Operation**
+   - Same codebase serves both MCP protocol and Alexa Custom Skill
+   - Unified capability system works across both modes
+   - Consistent device control regardless of interface
+
+2. **Type-Safe Capability System**
+   - Compile-time safety with TypeScript strict mode
+   - Branded types prevent domain errors (mixing device IDs, capability names)
+   - Runtime capability detection with `hasCapability()`
+   - Automatic value conversion between platform formats
+
+3. **Cross-Platform Abstraction**
+   - Single API for SmartThings, Tuya, and Lutron devices
+   - Platform-agnostic capability definitions
+   - Seamless bidirectional value mapping
+   - Future-proof design for adding new platforms
+
+4. **Production-Ready Architecture**
+   - Automatic retry with exponential backoff
+   - Structured logging with Winston (JSON format)
+   - Comprehensive error handling
+   - Extensive test coverage (unit + integration)
+
+5. **Developer-Friendly**
+   - Rich documentation with examples
+   - Interactive testing tools (REPL, Inspector, shell helpers)
+   - Type definitions for all APIs
+   - Clear contribution guidelines
+
+---
+
+## 🔐 Environment Variables
+
+| Variable | Required | Default | Description |
+|----------|----------|---------|-------------|
+| `SMARTTHINGS_PAT` | Yes | - | SmartThings Personal Access Token |
+| `MCP_SERVER_NAME` | No | `smartthings-mcp` | MCP server name |
+| `MCP_SERVER_VERSION` | No | `1.0.0` | MCP server version |
+| `MCP_SERVER_PORT` | No | `3000` | HTTP server port (http mode only) |
+| `NODE_ENV` | No | `development` | Node environment |
+| `LOG_LEVEL` | No | `info` | Logging level (error, warn, info, debug) |
+| `TRANSPORT_MODE` | No | `stdio` | Transport mode (stdio or http) |
+| `OPENROUTER_API_KEY` | No | - | OpenRouter API key for chatbot (optional) |
+
+---
+
+## 🛠️ Development
 
 ### Type Checking
 
@@ -451,128 +700,46 @@ pnpm format
 pnpm format:check
 ```
 
-### Testing
+### Project Structure
 
-The project provides multiple testing approaches:
-
-#### Unit Tests
-```bash
-# Run all tests
-pnpm test
-
-# Run unit tests only
-ppnpm test:unit
-
-# Run tests in watch mode
-ppnpm test:watch
-
-# Run tests with coverage
-ppnpm test:coverage
+```
+mcp-smartthings/
+├── src/
+│   ├── index.ts                    # Main MCP server entry point
+│   ├── cli/
+│   │   ├── chat.ts                 # Interactive chatbot
+│   │   └── alexa-server.ts         # Alexa Custom Skill server
+│   ├── mcp/
+│   │   ├── server.ts               # MCP server implementation
+│   │   └── tools/                  # MCP tool definitions
+│   ├── lib/
+│   │   ├── layer2/                 # Unified capability system
+│   │   │   ├── registry.ts         # Platform registry
+│   │   │   ├── converters/         # Value converters
+│   │   │   └── capabilities/       # Capability definitions
+│   │   ├── adapters/               # Platform adapters
+│   │   │   ├── smartthings/        # SmartThings adapter
+│   │   │   ├── tuya/               # Tuya adapter
+│   │   │   └── lutron/             # Lutron adapter
+│   │   └── smartthings-client.ts   # SmartThings API client
+│   └── types/
+│       ├── unified-device.ts       # Unified type definitions
+│       └── branded.ts              # Branded type utilities
+├── docs/                           # Documentation
+├── tests/                          # Test suites
+│   ├── unit/                       # Unit tests
+│   └── integration/                # Integration tests
+├── tools/                          # Development tools
+│   ├── mcp-test-gateway.ts         # Interactive REPL
+│   └── test-helpers.sh             # Shell helper functions
+├── package.json
+├── tsconfig.json
+└── README.md
 ```
 
-#### Integration Tests
-```bash
-# Run integration tests (requires built server)
-pnpm build
-ppnpm test:integration
-```
+---
 
-#### Interactive Test Gateway
-```bash
-# Launch interactive REPL client
-ppnpm test-gateway
-
-# Interactive session:
-# mcp> connect
-# mcp> devices
-# mcp> on abc-123-device-id
-# mcp> status abc-123-device-id
-# mcp> help
-# mcp> exit
-```
-
-#### MCP Inspector (Official GUI Tool)
-```bash
-# Launch MCP Inspector GUI
-ppnpm test:inspector
-
-# Opens browser at http://localhost:6274
-# - Visual interface for testing tools
-# - View request/response JSON-RPC messages
-# - Test tool execution with real devices
-```
-
-#### Shell Helper Functions
-```bash
-# Source helper functions
-source tools/test-helpers.sh
-
-# Use helper commands
-mcp_list_tools              # List all MCP tools
-st_list_devices             # List SmartThings devices
-st_turn_on "device-id"      # Turn device on
-st_turn_off "device-id"     # Turn device off
-st_status "device-id"       # Get device status
-mcp_test_all                # Run all basic tests
-```
-
-See [Testing Guide](#testing-guide) for comprehensive testing documentation.
-
-## Architecture
-
-### Strict Type Safety
-
-This project uses TypeScript strict mode with branded types for domain safety:
-
-- **DeviceId**: Branded string type prevents mixing device IDs with regular strings
-- **LocationId**: Branded type for SmartThings locations
-- **CapabilityName**: Branded type for capability identifiers
-
-### Error Handling
-
-All MCP tools return structured error responses:
-
-```typescript
-{
-  isError: true,
-  code: "VALIDATION_ERROR" | "DEVICE_NOT_FOUND" | "SMARTTHINGS_API_ERROR" | ...,
-  message: "Human-readable error message",
-  details?: { /* Additional error context */ }
-}
-```
-
-### Retry Logic
-
-SmartThings API calls use exponential backoff retry:
-
-- **Max Retries**: 3
-- **Initial Delay**: 1 second
-- **Backoff Multiplier**: 2x
-- **Max Delay**: 30 seconds
-
-Retries occur for:
-- Network errors (ECONNRESET, ETIMEDOUT)
-- HTTP 5xx server errors
-- HTTP 429 rate limit errors
-
-Non-retryable errors (fail immediately):
-- HTTP 4xx client errors (except 429)
-- Authentication failures
-- Validation errors
-
-## Environment Variables
-
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `SMARTTHINGS_PAT` | Yes | - | SmartThings Personal Access Token |
-| `MCP_SERVER_NAME` | No | `smartthings-mcp` | MCP server name |
-| `MCP_SERVER_VERSION` | No | `1.0.0` | MCP server version |
-| `MCP_SERVER_PORT` | No | `3000` | HTTP server port (http mode only) |
-| `NODE_ENV` | No | `development` | Node environment |
-| `LOG_LEVEL` | No | `info` | Logging level (error, warn, info, debug) |
-| `TRANSPORT_MODE` | No | `stdio` | Transport mode (stdio or http) |
-
-## Troubleshooting
+## 🐛 Troubleshooting
 
 ### "Environment validation failed: SMARTTHINGS_PAT is required"
 
@@ -581,7 +748,10 @@ Non-retryable errors (fail immediately):
 
 ### "Unauthorized" or "Forbidden" errors
 
-- Check that your PAT has the required scopes: `r:devices:*` and `x:devices:*`
+- Check that your PAT has the required scopes:
+  - `r:devices:*` and `x:devices:*`
+  - `r:scenes:*` and `x:scenes:*`
+  - `r:locations:*`
 - Verify the token hasn't expired
 
 ### "Device not found"
@@ -594,11 +764,9 @@ Non-retryable errors (fail immediately):
 - Verify your SmartThings account has devices configured
 - Check that your PAT has access to the correct location
 
-## License
+---
 
-MIT
-
-## Contributing
+## 🤝 Contributing
 
 Contributions are welcome! Please ensure:
 
@@ -607,264 +775,39 @@ Contributions are welcome! Please ensure:
 3. No linting errors (`pnpm lint`)
 4. Type checking passes (`pnpm typecheck`)
 
-## Testing Guide
+See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
 
-This project provides multiple testing approaches to suit different workflows:
+---
 
-### 1. MCP Inspector (Recommended for Interactive Testing)
+## 📄 License
 
-The official MCP Inspector provides a visual interface for testing:
+MIT - See [LICENSE](LICENSE) for details.
 
-```bash
-pnpm build
-ppnpm test:inspector
-```
+---
 
-**Features:**
-- Visual GUI for testing tools
-- View JSON-RPC request/response messages
-- Test with real SmartThings devices
-- Schema validation and error inspection
-- Opens at `http://localhost:6274`
+## 🙏 Acknowledgments
 
-**Use Cases:**
-- Initial testing and debugging
-- Interactive tool exploration
-- Real device testing
-- Protocol validation
+Built with:
+- [@modelcontextprotocol/sdk](https://www.npmjs.com/package/@modelcontextprotocol/sdk) - MCP protocol implementation
+- [@smartthings/core-sdk](https://www.npmjs.com/package/@smartthings/core-sdk) - SmartThings API client
+- [Fastify](https://www.fastify.io/) - HTTP server for Alexa integration
+- [Winston](https://github.com/winstonjs/winston) - Logging framework
 
-### 2. Interactive Test Gateway (CLI REPL)
+Inspired by:
+- [Model Context Protocol](https://modelcontextprotocol.io/) - Official MCP specification
+- [SmartThings API](https://developer.smartthings.com/docs/api/public) - SmartThings Developer Documentation
 
-A command-line REPL for testing without a GUI:
+---
 
-```bash
-ppnpm test-gateway
-```
-
-**Available Commands:**
-```
-Connection:
-  connect              - Connect to MCP server
-  disconnect           - Disconnect from server
-
-MCP Protocol:
-  tools                - List all available tools
-  call <tool> <args>   - Call a tool with JSON arguments
-
-SmartThings Shortcuts:
-  devices              - List all devices
-  status <deviceId>    - Get device status
-  on <deviceId>        - Turn device on
-  off <deviceId>       - Turn device off
-  capabilities <id>    - Get device capabilities
-
-Utility:
-  help                 - Show commands
-  clear                - Clear screen
-  exit                 - Exit gateway
-```
-
-**Example Session:**
-```bash
-$ ppnpm test-gateway
-
-mcp> connect
-✓ Connected successfully!
-
-mcp> devices
-Found 3 device(s):
-- Living Room Light (abc-123-...)
-- Kitchen Switch (def-456-...)
-
-mcp> on abc-123-...
-✓ Device turned on successfully
-
-mcp> exit
-```
-
-### 3. Shell Helper Functions
-
-Quick one-liners for scripting and automation:
-
-```bash
-source tools/test-helpers.sh
-```
-
-**Core Functions:**
-```bash
-# MCP Protocol
-mcp_initialize                      # Initialize MCP connection
-mcp_list_tools                      # List all tools
-mcp_call_tool <name> <args>         # Call any tool
-
-# SmartThings
-st_list_devices                     # List devices
-st_turn_on <deviceId>               # Turn device on
-st_turn_off <deviceId>              # Turn device off
-st_status <deviceId>                # Get device status
-st_capabilities <deviceId>          # Get capabilities
-
-# Testing
-mcp_test_all                        # Run all basic tests
-st_test_device <deviceId>           # Test device control
-mcp_test_errors                     # Test error handling
-```
-
-**Example Usage:**
-```bash
-# List devices
-st_list_devices
-
-# Control a device
-st_turn_on "abc-123-device-id"
-sleep 2
-st_turn_off "abc-123-device-id"
-
-# Run full test suite
-mcp_test_all
-```
-
-### 4. Integration Tests (Automated)
-
-Automated tests using Vitest and MCP SDK:
-
-```bash
-# Build server first
-pnpm build
-
-# Run integration tests
-ppnpm test:integration
-```
-
-**Test Coverage:**
-- MCP protocol compliance
-- Tool listing and metadata
-- Device query operations
-- Device control operations
-- Error handling and validation
-- Concurrent execution
-- Performance benchmarks
-
-**Environment Variables:**
-- `SMARTTHINGS_PAT`: Your SmartThings token (required)
-- `TEST_DEVICE_ID`: Optional device ID for real device tests
-
-### 5. Command-Line JSON-RPC Testing
-
-Direct JSON-RPC testing via stdio:
-
-```bash
-# List tools
-echo '{"jsonrpc":"2.0","method":"tools/list","id":1}' | \
-  node dist/index.js | jq
-
-# List devices
-echo '{
-  "jsonrpc":"2.0",
-  "method":"tools/call",
-  "params":{
-    "name":"list_devices",
-    "arguments":{}
-  },
-  "id":2
-}' | node dist/index.js | jq
-
-# Turn on device
-echo '{
-  "jsonrpc":"2.0",
-  "method":"tools/call",
-  "params":{
-    "name":"turn_on_device",
-    "arguments":{"deviceId":"your-device-id"}
-  },
-  "id":3
-}' | node dist/index.js | jq
-```
-
-### Testing Best Practices
-
-**1. Use Test Environment**
-- Create separate `.env.test` with test credentials
-- Use different SmartThings PAT for testing
-- Avoid testing on production devices
-
-**2. Test Device Selection**
-- Use non-critical devices for testing
-- Document test device IDs in environment variables
-- Consider using virtual devices or simulators
-
-**3. CI/CD Integration**
-```bash
-# Example GitHub Actions workflow
-pnpm build
-pnpm typecheck
-pnpm lint
-ppnpm test:unit
-ppnpm test:integration  # With test credentials
-```
-
-**4. Logging and Debugging**
-```bash
-# Enable debug logging
-LOG_LEVEL=debug pnpm dev
-
-# Capture logs separately
-node dist/index.js 2>error.log | jq
-```
-
-### Test Project Structure
-
-```
-tests/
-├── integration/
-│   └── mcp-client.test.ts       # Integration tests with MCP SDK
-├── unit/
-│   └── error-handler.test.ts    # Unit tests
-└── setup.ts                     # Test configuration
-
-tools/
-├── mcp-test-gateway.ts          # Interactive REPL client
-└── test-helpers.sh              # Shell helper functions
-```
-
-## Documentation
-
-Comprehensive documentation is available in the [docs/](docs/) directory:
-
-- **[Capability System](docs/)** - Platform abstraction and capability mapping
-  - **[Capability Mapping Guide](docs/capability-mapping-guide.md)** - Complete reference for all 31 capabilities, platform mappings, and value conversions
-  - **[Quick Reference Card](docs/capability-quick-reference.md)** - Cheat sheet for common operations and platform support
-
-- **[Setup Guides](docs/setup/)** - Installation and configuration
-  - [Alexa Quick Start](docs/setup/ALEXA_CUSTOM_SKILL_QUICK_START.md)
-  - [Diagnostic Tools Setup](docs/setup/DIAGNOSTIC_TOOLS_GUIDE.md)
-  - [ngrok Configuration](docs/setup/NGROK_QUICKSTART.md)
-
-- **[Implementation Guides](docs/implementation/)** - Development documentation
-  - [Alexa Custom Skill](docs/implementation/ALEXA_CUSTOM_SKILL_IMPLEMENTATION.md)
-  - [Chatbot Interface](docs/implementation/CHATBOT_IMPLEMENTATION.md)
-  - [Diagnostic Tools](docs/implementation/DIAGNOSTIC_TOOLS_IMPLEMENTATION.md)
-
-- **[Testing Documentation](docs/testing/)** - Test guides and verification
-  - [Testing Quick Start](docs/testing/TESTING_QUICK_START.md)
-  - [Verification Checklist](docs/testing/VERIFICATION_CHECKLIST.md)
-
-- **[QA Reports](docs/qa/)** - Quality assurance documentation
-
-- **[Research](docs/research/)** - Technical research and analysis
-
-For a complete index, see [docs/README.md](docs/README.md).
-
-## Support
+## 📞 Support
 
 For issues and questions:
 
 1. Check the [SmartThings API Documentation](https://developer.smartthings.com/docs/api/public)
 2. Review the [MCP SDK Documentation](https://modelcontextprotocol.io/)
-3. Open an issue on GitHub
+3. Search existing [GitHub Issues](https://github.com/bobmatnyc/mcp-smartthings/issues)
+4. Open a new issue with detailed description and logs
 
-## Acknowledgments
+---
 
-- Built with [@modelcontextprotocol/sdk](https://www.npmjs.com/package/@modelcontextprotocol/sdk)
-- Powered by [@smartthings/core-sdk](https://www.npmjs.com/package/@smartthings/core-sdk)
-- Inspired by the Model Context Protocol specification
+**Made with ❤️ for the smart home and AI communities**
