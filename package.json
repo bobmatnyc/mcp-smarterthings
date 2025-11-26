@@ -1,0 +1,77 @@
+{
+  "name": "@masa/mcp-smartthings",
+  "version": "1.0.0",
+  "description": "Model Context Protocol (MCP) server for SmartThings home automation",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "mcp-smartthings": "./dist/index.js"
+  },
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "chat": "pnpm run build && node dist/cli/chat.js",
+    "chat:dev": "tsx src/cli/chat.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:unit": "vitest run tests/unit",
+    "test:integration": "vitest run tests/integration",
+    "test-gateway": "tsx tools/mcp-test-gateway.ts",
+    "test:inspector": "pnpx @modelcontextprotocol/inspector node dist/index.js",
+    "lint": "eslint src --ext .ts",
+    "lint:fix": "eslint src --ext .ts --fix",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\"",
+    "typecheck": "tsc --noEmit",
+    "release": "standard-version",
+    "release:patch": "standard-version --release-as patch",
+    "release:minor": "standard-version --release-as minor",
+    "release:major": "standard-version --release-as major",
+    "preversion": "pnpm test || true",
+    "version": "pnpm build",
+    "postversion": "git push --follow-tags origin main"
+  },
+  "packageManager": "pnpm@10.18.3",
+  "keywords": [
+    "mcp",
+    "smartthings",
+    "home-automation",
+    "model-context-protocol",
+    "llm"
+  ],
+  "author": "masa",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.22.0",
+    "@smartthings/core-sdk": "^8.0.0",
+    "@types/mustache": "^4.2.6",
+    "chalk": "^5.3.0",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "mustache": "^4.2.0",
+    "openai": "^4.20.0",
+    "winston": "^3.15.0",
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^22.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "@vitest/coverage-v8": "^3.0.0",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.2.0",
+    "prettier": "^3.3.0",
+    "standard-version": "^9.5.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0",
+    "vitest": "^3.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
