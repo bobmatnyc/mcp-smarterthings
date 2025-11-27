@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { smartThingsService } from '../../smartthings/client.js';
 import { turnOn, turnOff, getSwitchState } from '../../smartthings/capabilities/switch.js';
 import { createMcpResponse } from '../../types/mcp.js';
 import { createMcpError, classifyError } from '../../utils/error-handler.js';
@@ -7,12 +6,19 @@ import { deviceIdSchema } from '../../utils/validation.js';
 import type { DeviceId } from '../../types/smartthings.js';
 import type { McpToolInput } from '../../types/mcp.js';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
+import type { ServiceContainer } from '../../services/ServiceContainer.js';
 
 /**
  * Device control tools for MCP server.
  *
  * These tools provide device control capabilities through the MCP protocol.
+ *
+ * Architecture: Uses ServiceContainer for dependency injection
+ * - DeviceService: Device status and capability queries
  */
+
+// Service container instance (injected during initialization)
+let serviceContainer: ServiceContainer;
 
 // Input schemas with Zod validation
 const turnOnDeviceSchema = z.object({
@@ -101,9 +107,11 @@ export async function handleGetDeviceStatus(input: McpToolInput): Promise<CallTo
   try {
     const { deviceId } = getDeviceStatusSchema.parse(input);
 
+    const deviceService = serviceContainer.getDeviceService();
+
     const [device, status] = await Promise.all([
-      smartThingsService.getDevice(deviceId as DeviceId),
-      smartThingsService.getDeviceStatus(deviceId as DeviceId),
+      deviceService.getDevice(deviceId as DeviceId),
+      deviceService.getDeviceStatus(deviceId as DeviceId),
     ]);
 
     // Extract switch state if available
@@ -130,6 +138,17 @@ export async function handleGetDeviceStatus(input: McpToolInput): Promise<CallTo
     const errorCode = classifyError(error);
     return createMcpError(error, errorCode);
   }
+}
+
+/**
+ * Initialize device control tools with ServiceContainer.
+ *
+ * Must be called during server initialization to inject dependencies.
+ *
+ * @param container ServiceContainer instance for dependency injection
+ */
+export function initializeDeviceControlTools(container: ServiceContainer): void {
+  serviceContainer = container;
 }
 
 /**

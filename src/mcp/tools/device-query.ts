@@ -1,17 +1,24 @@
 import { z } from 'zod';
-import { smartThingsService } from '../../smartthings/client.js';
 import { createMcpResponse } from '../../types/mcp.js';
 import { createMcpError, classifyError } from '../../utils/error-handler.js';
 import { deviceIdSchema } from '../../utils/validation.js';
 import type { DeviceId, RoomId } from '../../types/smartthings.js';
 import type { McpToolInput } from '../../types/mcp.js';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
+import type { ServiceContainer } from '../../services/ServiceContainer.js';
 
 /**
  * Device query tools for MCP server.
  *
  * These tools provide device discovery and capability querying.
+ *
+ * Architecture: Uses ServiceContainer for dependency injection
+ * - DeviceService: Device listing, queries, and capability information
+ * - LocationService: Room lookups and room listings
  */
+
+// Service container instance (injected during initialization)
+let serviceContainer: ServiceContainer;
 
 // Input schemas
 const listDevicesSchema = z.object({
@@ -49,17 +56,20 @@ export async function handleListDevices(input: McpToolInput): Promise<CallToolRe
   try {
     const { roomName } = listDevicesSchema.parse(input);
 
+    const deviceService = serviceContainer.getDeviceService();
+    const locationService = serviceContainer.getLocationService();
+
     let roomId: RoomId | undefined;
     let actualRoomName: string | undefined;
 
     // If room filter is specified, find the room
     if (roomName) {
-      const room = await smartThingsService.findRoomByName(roomName);
+      const room = await locationService.findRoomByName(roomName);
       roomId = room.roomId;
       actualRoomName = room.name;
     }
 
-    const devices = await smartThingsService.listDevices(roomId);
+    const devices = await deviceService.listDevices(roomId);
 
     const deviceList = devices
       .map((device) => {
@@ -114,9 +124,12 @@ export async function handleListDevicesByRoom(input: McpToolInput): Promise<Call
   try {
     const { roomName } = listDevicesByRoomSchema.parse(input);
 
+    const deviceService = serviceContainer.getDeviceService();
+    const locationService = serviceContainer.getLocationService();
+
     // Find the room (throws if not found or ambiguous)
-    const room = await smartThingsService.findRoomByName(roomName);
-    const devices = await smartThingsService.listDevices(room.roomId);
+    const room = await locationService.findRoomByName(roomName);
+    const devices = await deviceService.listDevices(room.roomId);
 
     if (devices.length === 0) {
       return createMcpResponse(`No devices found in room "${room.name}".`, {
@@ -166,7 +179,8 @@ export async function handleListDevicesByRoom(input: McpToolInput): Promise<Call
  */
 export async function handleListRooms(_input: McpToolInput): Promise<CallToolResult> {
   try {
-    const rooms = await smartThingsService.listRooms();
+    const locationService = serviceContainer.getLocationService();
+    const rooms = await locationService.listRooms();
 
     const roomList = rooms
       .map(
@@ -207,9 +221,11 @@ export async function handleGetDeviceCapabilities(input: McpToolInput): Promise<
   try {
     const { deviceId } = getDeviceCapabilitiesSchema.parse(input);
 
+    const deviceService = serviceContainer.getDeviceService();
+
     const [device, capabilities] = await Promise.all([
-      smartThingsService.getDevice(deviceId as DeviceId),
-      smartThingsService.getDeviceCapabilities(deviceId as DeviceId),
+      deviceService.getDevice(deviceId as DeviceId),
+      deviceService.getDeviceCapabilities(deviceId as DeviceId),
     ]);
 
     const responseText = `Device: ${device.name}\nCapabilities (${capabilities.length}):\n${capabilities.map((cap) => `- ${cap}`).join('\n')}`;
@@ -223,6 +239,17 @@ export async function handleGetDeviceCapabilities(input: McpToolInput): Promise<
     const errorCode = classifyError(error);
     return createMcpError(error, errorCode);
   }
+}
+
+/**
+ * Initialize device query tools with ServiceContainer.
+ *
+ * Must be called during server initialization to inject dependencies.
+ *
+ * @param container ServiceContainer instance for dependency injection
+ */
+export function initializeDeviceQueryTools(container: ServiceContainer): void {
+  serviceContainer = container;
 }
 
 /**

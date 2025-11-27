@@ -6,12 +6,24 @@ import { deviceIdSchema } from '../../utils/validation.js';
 import type { DeviceId } from '../../types/smartthings.js';
 import type { McpToolInput } from '../../types/mcp.js';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
+import type { ServiceContainer } from '../../services/ServiceContainer.js';
 
 /**
  * Management tools for rooms, locations, and device assignments.
  *
  * These tools provide CRUD operations for organizing the smart home.
+ *
+ * Architecture: Uses ServiceContainer for dependency injection
+ * - LocationService: Location and room operations
+ * - DeviceService: Device queries for room operations
+ *
+ * Note: Some operations (create/update/delete room, assign device) currently
+ * use SmartThingsService.client directly as these CRUD operations are not yet
+ * abstracted in the service layer. This is a known limitation for Phase 1.
  */
+
+// Service container instance (injected during initialization)
+let serviceContainer: ServiceContainer;
 
 // Input schemas
 const createRoomSchema = z.object({
@@ -44,10 +56,12 @@ export async function handleCreateRoom(input: McpToolInput): Promise<CallToolRes
   try {
     const { name, locationId } = createRoomSchema.parse(input);
 
+    const locationService = serviceContainer.getLocationService();
+
     // Get location ID if not provided
     let targetLocationId = locationId;
     if (!targetLocationId) {
-      const locations = await smartThingsService.listLocations();
+      const locations = await locationService.listLocations();
       if (locations.length === 0) {
         throw new Error('No locations found. Please create a location first.');
       }
@@ -86,8 +100,10 @@ export async function handleUpdateRoom(input: McpToolInput): Promise<CallToolRes
   try {
     const { roomName, newName } = updateRoomSchema.parse(input);
 
+    const locationService = serviceContainer.getLocationService();
+
     // Find room by name
-    const room = await smartThingsService.findRoomByName(roomName);
+    const room = await locationService.findRoomByName(roomName);
 
     // Update room using SmartThings SDK
     await (smartThingsService as any).client.rooms.update(room.roomId, {
@@ -118,11 +134,14 @@ export async function handleDeleteRoom(input: McpToolInput): Promise<CallToolRes
   try {
     const { roomName } = deleteRoomSchema.parse(input);
 
+    const locationService = serviceContainer.getLocationService();
+    const deviceService = serviceContainer.getDeviceService();
+
     // Find room by name
-    const room = await smartThingsService.findRoomByName(roomName);
+    const room = await locationService.findRoomByName(roomName);
 
     // Check if room has devices
-    const devices = await smartThingsService.listDevices(room.roomId);
+    const devices = await deviceService.listDevices(room.roomId);
     const deviceCount = devices.length;
 
     // Delete room using SmartThings SDK
@@ -153,11 +172,14 @@ export async function handleAssignDeviceToRoom(input: McpToolInput): Promise<Cal
   try {
     const { deviceId, roomName } = assignDeviceToRoomSchema.parse(input);
 
+    const locationService = serviceContainer.getLocationService();
+    const deviceService = serviceContainer.getDeviceService();
+
     // Find room by name
-    const room = await smartThingsService.findRoomByName(roomName);
+    const room = await locationService.findRoomByName(roomName);
 
     // Get device info for confirmation
-    const device = await smartThingsService.getDevice(deviceId as DeviceId);
+    const device = await deviceService.getDevice(deviceId as DeviceId);
 
     // Update device room assignment
     await (smartThingsService as any).client.devices.update(deviceId, {
@@ -185,7 +207,8 @@ export async function handleAssignDeviceToRoom(input: McpToolInput): Promise<Cal
  */
 export async function handleListLocations(_input: McpToolInput): Promise<CallToolResult> {
   try {
-    const locations = await smartThingsService.listLocations();
+    const locationService = serviceContainer.getLocationService();
+    const locations = await locationService.listLocations();
 
     const locationList = locations
       .map((location) => {
@@ -203,6 +226,17 @@ export async function handleListLocations(_input: McpToolInput): Promise<CallToo
     const errorCode = classifyError(error);
     return createMcpError(error, errorCode);
   }
+}
+
+/**
+ * Initialize management tools with ServiceContainer.
+ *
+ * Must be called during server initialization to inject dependencies.
+ *
+ * @param container ServiceContainer instance for dependency injection
+ */
+export function initializeManagementTools(container: ServiceContainer): void {
+  serviceContainer = container;
 }
 
 /**

@@ -1,16 +1,23 @@
 import { z } from 'zod';
-import { smartThingsService } from '../../smartthings/client.js';
 import { createMcpResponse } from '../../types/mcp.js';
 import { createMcpError, classifyError } from '../../utils/error-handler.js';
 import type { SceneId } from '../../types/smartthings.js';
 import type { McpToolInput } from '../../types/mcp.js';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
+import type { ServiceContainer } from '../../services/ServiceContainer.js';
 
 /**
  * Scene management tools for MCP server.
  *
  * These tools provide scene listing and execution capabilities.
+ *
+ * Architecture: Uses ServiceContainer for dependency injection
+ * - SceneService: Scene listing and execution
+ * - LocationService: Room lookups for filtering
  */
+
+// Service container instance (injected during initialization)
+let serviceContainer: ServiceContainer;
 
 // Input schemas
 const listScenesSchema = z.object({
@@ -59,17 +66,20 @@ export async function handleListScenes(input: McpToolInput): Promise<CallToolRes
   try {
     const { roomName } = listScenesSchema.parse(input);
 
+    const sceneService = serviceContainer.getSceneService();
+    const locationService = serviceContainer.getLocationService();
+
     let locationId: string | undefined;
     let actualRoomName: string | undefined;
 
     // If room filter is specified, find the room and get its location
     if (roomName) {
-      const room = await smartThingsService.findRoomByName(roomName);
+      const room = await locationService.findRoomByName(roomName);
       locationId = room.locationId;
       actualRoomName = room.name;
     }
 
-    const scenes = await smartThingsService.listScenes(
+    const scenes = await sceneService.listScenes(
       locationId as import('../../types/smartthings.js').LocationId | undefined
     );
 
@@ -141,11 +151,14 @@ export async function handleListScenesByRoom(input: McpToolInput): Promise<CallT
   try {
     const { roomName } = listScenesByRoomSchema.parse(input);
 
+    const sceneService = serviceContainer.getSceneService();
+    const locationService = serviceContainer.getLocationService();
+
     // Find the room and get its location (throws if not found or ambiguous)
-    const room = await smartThingsService.findRoomByName(roomName);
+    const room = await locationService.findRoomByName(roomName);
     const locationId = room.locationId;
 
-    const scenes = await smartThingsService.listScenes(locationId);
+    const scenes = await sceneService.listScenes(locationId);
 
     if (scenes.length === 0) {
       return createMcpResponse(`No scenes found in location for room "${room.name}".`, {
@@ -208,6 +221,8 @@ export async function handleExecuteScene(input: McpToolInput): Promise<CallToolR
   try {
     const { sceneId, sceneName } = executeSceneSchema.parse(input);
 
+    const sceneService = serviceContainer.getSceneService();
+
     // Validate that at least one identifier is provided
     if (!sceneId && !sceneName) {
       throw new Error('Either sceneId or sceneName must be provided');
@@ -217,9 +232,9 @@ export async function handleExecuteScene(input: McpToolInput): Promise<CallToolR
 
     if (sceneId) {
       // Execute by ID directly (faster)
-      await smartThingsService.executeScene(sceneId as SceneId);
+      await sceneService.executeScene(sceneId as SceneId);
       // Fetch scene details for confirmation message
-      const scenes = await smartThingsService.listScenes();
+      const scenes = await sceneService.listScenes();
       const scene = scenes.find((s) => s.sceneId === sceneId);
       targetScene = {
         sceneId: sceneId as SceneId,
@@ -227,8 +242,8 @@ export async function handleExecuteScene(input: McpToolInput): Promise<CallToolR
       };
     } else {
       // Find by name first, then execute
-      const scene = await smartThingsService.findSceneByName(sceneName!);
-      await smartThingsService.executeScene(scene.sceneId);
+      const scene = await sceneService.findSceneByName(sceneName!);
+      await sceneService.executeScene(scene.sceneId);
       targetScene = {
         sceneId: scene.sceneId,
         sceneName: scene.sceneName,
@@ -246,6 +261,17 @@ export async function handleExecuteScene(input: McpToolInput): Promise<CallToolR
     const errorCode = classifyError(error);
     return createMcpError(error, errorCode);
   }
+}
+
+/**
+ * Initialize scene tools with ServiceContainer.
+ *
+ * Must be called during server initialization to inject dependencies.
+ *
+ * @param container ServiceContainer instance for dependency injection
+ */
+export function initializeSceneTools(container: ServiceContainer): void {
+  serviceContainer = container;
 }
 
 /**

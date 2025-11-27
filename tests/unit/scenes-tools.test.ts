@@ -5,8 +5,9 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { handleListScenesByRoom } from '../../src/mcp/tools/scenes.js';
+import { handleListScenesByRoom, initializeSceneTools } from '../../src/mcp/tools/scenes.js';
 import * as client from '../../src/smartthings/client.js';
+import { ServiceContainer } from '../../src/services/ServiceContainer.js';
 import type {
   RoomInfo,
   SceneInfo,
@@ -25,6 +26,12 @@ vi.mock('../../src/smartthings/client.js', () => ({
 
 describe('Scene Tools', () => {
   describe('handleListScenesByRoom', () => {
+    // Initialize tools with ServiceContainer before tests
+    beforeEach(() => {
+      const serviceContainer = new ServiceContainer(client.smartThingsService);
+      initializeSceneTools(serviceContainer);
+    });
+
     const mockRoom: RoomInfo = {
       roomId: 'room-123' as RoomId,
       name: 'Living Room',

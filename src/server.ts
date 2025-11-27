@@ -8,21 +8,40 @@ import {
   systemTools,
   managementTools,
   diagnosticTools,
+  initializeDeviceControlTools,
+  initializeDeviceQueryTools,
+  initializeSceneTools,
+  initializeManagementTools,
+  initializeDiagnosticTools,
 } from './mcp/tools/index.js';
+import { ServiceContainer } from './services/ServiceContainer.js';
+import { smartThingsService } from './smartthings/client.js';
 import logger from './utils/logger.js';
 
 /**
  * MCP server configuration and initialization.
  *
- * Design Decision: Centralized server configuration
+ * Design Decision: Centralized server configuration with dependency injection
  * Rationale: Single source of truth for all MCP capabilities (tools, resources, prompts).
- * Simplifies registration and provides clear overview of available features.
+ * ServiceContainer provides dependency injection for all tools, enabling clean
+ * separation between MCP layer and business logic layer.
  *
- * Extensibility: New tools/resources added by importing and registering here.
+ * Architecture:
+ * - ServiceContainer initialized with SmartThingsService
+ * - All tools receive ServiceContainer during initialization
+ * - Tools use services (DeviceService, LocationService, SceneService) instead of direct SmartThingsService
+ *
+ * Extensibility: New tools/resources added by importing, initializing, and registering here.
  */
 
 /**
  * Creates and configures the MCP server.
+ *
+ * Lifecycle:
+ * 1. Initialize ServiceContainer with SmartThingsService
+ * 2. Initialize all tool modules with ServiceContainer
+ * 3. Configure MCP server with tool handlers
+ * 4. Return configured server
  *
  * @returns Configured MCP Server instance
  */
@@ -31,6 +50,19 @@ export function createMcpServer(): Server {
     name: environment.MCP_SERVER_NAME,
     version: environment.MCP_SERVER_VERSION,
   });
+
+  // Initialize ServiceContainer with SmartThingsService dependency
+  const serviceContainer = new ServiceContainer(smartThingsService);
+
+  // Initialize all tool modules with ServiceContainer
+  // This injects the service dependencies into each tool module
+  initializeDeviceControlTools(serviceContainer);
+  initializeDeviceQueryTools(serviceContainer);
+  initializeSceneTools(serviceContainer);
+  initializeManagementTools(serviceContainer);
+  initializeDiagnosticTools(serviceContainer);
+
+  logger.info('ServiceContainer initialized and injected into all tool modules');
 
   const server = new Server(
     {

@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { smartThingsService } from '../../smartthings/client.js';
 import { createMcpResponse } from '../../types/mcp.js';
 import { createMcpError, classifyError } from '../../utils/error-handler.js';
 import { deviceIdSchema } from '../../utils/validation.js';
@@ -9,6 +8,7 @@ import { API_CONSTANTS } from '../../config/constants.js';
 import type { DeviceId } from '../../types/smartthings.js';
 import type { McpToolInput } from '../../types/mcp.js';
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
+import type { ServiceContainer } from '../../services/ServiceContainer.js';
 import logger from '../../utils/logger.js';
 
 /**
@@ -20,7 +20,15 @@ import logger from '../../utils/logger.js';
  * Design Decision: All-in-one diagnostics file
  * Rationale: Diagnostic tools are conceptually related and share similar patterns.
  * Grouping them together improves maintainability and discoverability.
+ *
+ * Architecture: Uses ServiceContainer for dependency injection
+ * - DeviceService: Device health, status, and capability validation
+ * - LocationService: Location and room listings for system info
+ * - SceneService: Scene listings for diagnostics (future use)
  */
+
+// Service container instance (injected during initialization)
+let serviceContainer: ServiceContainer;
 
 // ============================================================================
 // Input Schemas
@@ -285,10 +293,13 @@ export async function handleTestConnection(_input: McpToolInput): Promise<CallTo
   try {
     const startTime = Date.now();
 
+    const locationService = serviceContainer.getLocationService();
+    const deviceService = serviceContainer.getDeviceService();
+
     // Test 1: Try to list locations (lightweight API call)
     let locations;
     try {
-      locations = await smartThingsService.listLocations();
+      locations = await locationService.listLocations();
     } catch (error) {
       // Connection failed - provide helpful error message
       const errorMsg = error instanceof Error ? error.message : 'Unknown error';
@@ -305,8 +316,8 @@ export async function handleTestConnection(_input: McpToolInput): Promise<CallTo
 
     // Test 2: Validate we can retrieve basic data
     const [devices, rooms] = await Promise.all([
-      smartThingsService.listDevices(),
-      smartThingsService.listRooms(),
+      deviceService.listDevices(),
+      locationService.listRooms(),
     ]);
 
     // Check token expiration status
@@ -355,10 +366,12 @@ export async function handleGetDeviceHealth(input: McpToolInput): Promise<CallTo
   try {
     const { deviceId } = getDeviceHealthSchema.parse(input);
 
+    const deviceService = serviceContainer.getDeviceService();
+
     // Get device details and status
     const [device, status] = await Promise.all([
-      smartThingsService.getDevice(deviceId as DeviceId),
-      smartThingsService.getDeviceStatus(deviceId as DeviceId),
+      deviceService.getDevice(deviceId as DeviceId),
+      deviceService.getDeviceStatus(deviceId as DeviceId),
     ]);
 
     // Extract health-related data from status
@@ -502,11 +515,14 @@ export function handleListFailedCommands(input: McpToolInput): CallToolResult {
  */
 export async function handleGetSystemInfo(_input: McpToolInput): Promise<CallToolResult> {
   try {
+    const locationService = serviceContainer.getLocationService();
+    const deviceService = serviceContainer.getDeviceService();
+
     // Gather system information
     const [locations, devices, rooms] = await Promise.all([
-      smartThingsService.listLocations(),
-      smartThingsService.listDevices(),
-      smartThingsService.listRooms(),
+      locationService.listLocations(),
+      deviceService.listDevices(),
+      locationService.listRooms(),
     ]);
 
     // Group devices by type
@@ -594,8 +610,10 @@ export async function handleValidateDeviceCapabilities(
   try {
     const { deviceId, capability, command } = validateDeviceCapabilitiesSchema.parse(input);
 
+    const deviceService = serviceContainer.getDeviceService();
+
     // Get device details and capabilities
-    const device = await smartThingsService.getDevice(deviceId as DeviceId);
+    const device = await deviceService.getDevice(deviceId as DeviceId);
     const capabilities = device.capabilities || [];
 
     // Check if capability is supported
@@ -687,13 +705,16 @@ export async function handleExportDiagnostics(input: McpToolInput): Promise<Call
       maxDevices,
     });
 
+    const locationService = serviceContainer.getLocationService();
+    const deviceService = serviceContainer.getDeviceService();
+
     const timestamp = new Date().toISOString();
 
     // 1. System info
     const [locations, devices, rooms] = await Promise.all([
-      smartThingsService.listLocations(),
-      smartThingsService.listDevices(),
-      smartThingsService.listRooms(),
+      locationService.listLocations(),
+      deviceService.listDevices(),
+      locationService.listRooms(),
     ]);
 
     // Group devices by type
@@ -735,7 +756,7 @@ export async function handleExportDiagnostics(input: McpToolInput): Promise<Call
       // Use Promise.allSettled to prevent single failure from blocking others
       const healthChecks = sampleDevices.map(async (device) => {
         try {
-          const status = await smartThingsService.getDeviceStatus(device.deviceId);
+          const status = await deviceService.getDeviceStatus(device.deviceId);
           const mainComponent =
             status.components['main'] || status.components[Object.keys(status.components)[0]!];
 
@@ -812,11 +833,22 @@ export async function handleExportDiagnostics(input: McpToolInput): Promise<Call
 // ============================================================================
 
 /**
+ * Initialize diagnostic tools with ServiceContainer.
+ *
+ * Must be called during server initialization to inject dependencies.
+ *
+ * @param container ServiceContainer instance for dependency injection
+ */
+export function initializeDiagnosticTools(container: ServiceContainer): void {
+  serviceContainer = container;
+}
+
+/**
  * Diagnostic tools export for MCP server registration.
  *
  * All diagnostic tools follow consistent patterns:
  * 1. Zod schema validation for inputs
- * 2. Business logic using smartThingsService or diagnosticTracker
+ * 2. Business logic using services or diagnosticTracker
  * 3. Human-readable message + structured data response
  * 4. Comprehensive error handling with classification
  */

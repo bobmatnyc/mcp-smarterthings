@@ -5,8 +5,9 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { handleListDevicesByRoom } from '../../src/mcp/tools/device-query.js';
+import { handleListDevicesByRoom, initializeDeviceQueryTools } from '../../src/mcp/tools/device-query.js';
 import * as client from '../../src/smartthings/client.js';
+import { ServiceContainer } from '../../src/services/ServiceContainer.js';
 import type { RoomInfo, DeviceInfo, RoomId, DeviceId } from '../../src/types/smartthings.js';
 
 // Mock the SmartThings client
@@ -19,6 +20,12 @@ vi.mock('../../src/smartthings/client.js', () => ({
 
 describe('Device Query Tools', () => {
   describe('handleListDevicesByRoom', () => {
+    // Initialize tools with ServiceContainer before tests
+    beforeEach(() => {
+      const serviceContainer = new ServiceContainer(client.smartThingsService);
+      initializeDeviceQueryTools(serviceContainer);
+    });
+
     const mockRoom: RoomInfo = {
       roomId: 'room-123' as RoomId,
       name: 'Living Room',
