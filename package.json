@@ -17,6 +17,8 @@
     "start": "node dist/index.js",
     "chat": "pnpm run build && node dist/cli/chat.js",
     "chat:dev": "tsx src/cli/chat.ts",
+    "config": "pnpm run build && node dist/cli/config.js",
+    "config:dev": "tsx src/cli/config.ts",
     "alexa-server": "pnpm run build && node dist/cli/alexa-server.js",
     "alexa-server:dev": "tsx src/cli/alexa-server.ts",
     "test": "vitest run",
