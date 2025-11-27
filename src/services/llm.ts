@@ -1,18 +1,19 @@
 /**
  * LLM integration service using OpenRouter API.
  *
- * Design Decision: OpenRouter for multi-model access
- * Rationale: Free tier access to multiple models (DeepSeek, Grok, etc.)
- * via OpenAI-compatible API. Allows model flexibility without vendor lock-in.
+ * Design Decision: OpenRouter with Claude Sonnet 4.5
+ * Rationale: Claude Sonnet 4.5 provides state-of-the-art instruction following,
+ * tool use, and natural language understanding via OpenAI-compatible API.
+ * OpenRouter allows model flexibility without vendor lock-in.
  *
  * Architecture:
- * Chatbot → LlmService (OpenRouter) → Model API
+ * Chatbot → LlmService (OpenRouter) → Claude API
  *
  * Trade-offs:
- * - Cost: Free tier vs. paid OpenAI/Anthropic
- * - Latency: Additional routing overhead vs. direct API
- * - Flexibility: Multi-model access vs. single provider
- * - Rate Limits: Shared free tier limits vs. dedicated quota
+ * - Quality: Claude Sonnet 4.5 for best-in-class performance
+ * - Latency: Additional routing overhead vs. direct API (~100-200ms)
+ * - Flexibility: Can switch models via config vs. hardcoded provider
+ * - Rate Limits: OpenRouter rate limits apply
  *
  * Error Handling:
  * - API key missing → Throw with setup instructions
@@ -44,6 +45,73 @@ export interface LlmToolCall {
 }
 
 /**
+ * Web search configuration for LLM requests.
+ */
+export interface WebSearchConfig {
+  /**
+   * Maximum number of search results to include.
+   * Default: 3 (balance between context and cost)
+   * Range: 1-10 (higher = more cost)
+   */
+  maxResults?: number;
+
+  /**
+   * Custom search prompt to guide search query generation.
+   * Example: "Focus on recent smart home device issues and solutions"
+   */
+  searchPrompt?: string;
+
+  /**
+   * Search engine to use.
+   * - 'native': Provider's built-in search (Anthropic, OpenAI, etc.)
+   * - 'exa': Exa search engine (fallback for unsupported providers)
+   * - undefined: Auto-select based on provider
+   */
+  engine?: 'native' | 'exa';
+
+  /**
+   * Search context size (affects depth of search).
+   * - 'low': Fast, minimal context
+   * - 'medium': Balanced (default)
+   * - 'high': Deep search, more results
+   */
+  contextSize?: 'low' | 'medium' | 'high';
+}
+
+/**
+ * Citation annotation from web search results.
+ */
+export interface UrlCitation {
+  type: 'url_citation';
+  url_citation: {
+    /**
+     * Full URL of the source.
+     */
+    url: string;
+
+    /**
+     * Title of the source page.
+     */
+    title: string;
+
+    /**
+     * Excerpt from the source (search result snippet).
+     */
+    content: string;
+
+    /**
+     * Character index where citation starts in response text.
+     */
+    start_index: number;
+
+    /**
+     * Character index where citation ends in response text.
+     */
+    end_index: number;
+  };
+}
+
+/**
  * LLM response structure.
  */
 export interface LlmResponse {
@@ -61,6 +129,11 @@ export interface LlmResponse {
    * Whether this is the final response (no tool calls).
    */
   finished: boolean;
+
+  /**
+   * Citation annotations from web search results (if web search enabled).
+   */
+  citations?: UrlCitation[];
 
   /**
    * Usage statistics from the API.
@@ -91,22 +164,27 @@ export interface ILlmService {
    *
    * @param messages Conversation history
    * @param tools Available tools for function calling
+   * @param options Optional configuration including web search settings
    * @returns LLM response with content and/or tool calls
    * @throws Error if API request fails after retries
    */
-  chat(messages: ChatMessage[], tools: McpToolDefinition[]): Promise<LlmResponse>;
+  chat(
+    messages: ChatMessage[],
+    tools: McpToolDefinition[],
+    options?: { enableWebSearch?: boolean; searchConfig?: WebSearchConfig }
+  ): Promise<LlmResponse>;
 }
 
 /**
  * LLM service implementation using OpenRouter.
  *
- * Performance:
- * - Typical latency: 1-3 seconds for simple queries
- * - With tool calls: 2-5 seconds (depends on model)
+ * Performance (Claude Sonnet 4.5):
+ * - Typical latency: 1-2 seconds for simple queries
+ * - With tool calls: 2-3 seconds (Sonnet 4.5 excels at tool use)
  * - Retry overhead: +2-8 seconds on failures
  *
  * Rate Limits:
- * - Free tier: ~10-20 requests/minute (model dependent)
+ * - OpenRouter rate limits apply (varies by plan)
  * - Exponential backoff handles rate limit errors
  */
 export class LlmService implements ILlmService {
@@ -136,7 +214,7 @@ export class LlmService implements ILlmService {
       },
     });
 
-    this.model = config.model ?? 'deepseek/deepseek-chat'; // Free tier default
+    this.model = config.model ?? 'anthropic/claude-sonnet-4.5'; // Claude Sonnet 4.5 for best performance
     this.maxRetries = config.maxRetries ?? 3;
 
     logger.info('LLM service initialized', {
@@ -149,19 +227,27 @@ export class LlmService implements ILlmService {
    * Send chat message to LLM.
    *
    * Complexity: O(1) - single API call
-   * Network: 1-5 seconds typical latency
+   * Network: 1-5 seconds typical latency (2-7 seconds with web search)
    *
    * Retry Strategy:
    * 1. First attempt: immediate
    * 2. Retry 1: wait 2 seconds
    * 3. Retry 2: wait 4 seconds
    * 4. Retry 3: wait 8 seconds
+   *
+   * Web Search: When enableWebSearch=true, OpenRouter's web search plugin
+   * is used to augment LLM responses with real-time information from the web.
    */
-  async chat(messages: ChatMessage[], tools: McpToolDefinition[]): Promise<LlmResponse> {
+  async chat(
+    messages: ChatMessage[],
+    tools: McpToolDefinition[],
+    options?: { enableWebSearch?: boolean; searchConfig?: WebSearchConfig }
+  ): Promise<LlmResponse> {
     logger.debug('Sending chat request to LLM', {
       messageCount: messages.length,
       toolCount: tools.length,
       model: this.model,
+      webSearchEnabled: options?.enableWebSearch ?? false,
     });
 
     const openaiTools = this.convertToolsToOpenAiFormat(tools);
@@ -170,13 +256,43 @@ export class LlmService implements ILlmService {
 
     for (let attempt = 0; attempt < this.maxRetries; attempt++) {
       try {
-        const response = await this.client.chat.completions.create({
+        // Build request parameters
+        const requestParams: any = {
           model: this.model,
           messages,
           tools: openaiTools.length > 0 ? openaiTools : undefined,
           temperature: 0.7,
           max_tokens: 2000,
-        });
+        };
+
+        // Add web search plugin if enabled
+        if (options?.enableWebSearch) {
+          const searchConfig = options.searchConfig ?? {};
+
+          requestParams.plugins = [
+            {
+              id: 'web',
+              engine: searchConfig.engine ?? 'native',
+              max_results: searchConfig.maxResults ?? 3,
+              search_prompt: searchConfig.searchPrompt,
+            },
+          ];
+
+          // Add search context size if specified
+          if (searchConfig.contextSize) {
+            requestParams.web_search_options = {
+              search_context_size: searchConfig.contextSize,
+            };
+          }
+
+          logger.debug('Web search enabled', {
+            engine: searchConfig.engine ?? 'native',
+            maxResults: searchConfig.maxResults ?? 3,
+            contextSize: searchConfig.contextSize,
+          });
+        }
+
+        const response = await this.client.chat.completions.create(requestParams);
 
         const choice = response.choices[0];
         if (!choice) {
@@ -204,10 +320,27 @@ export class LlmService implements ILlmService {
           }
         }
 
+        // Extract citations from web search results
+        const citations: UrlCitation[] = [];
+        if (options?.enableWebSearch && (choice.message as any).annotations) {
+          for (const annotation of (choice.message as any).annotations) {
+            if (annotation.type === 'url_citation') {
+              citations.push(annotation as UrlCitation);
+            }
+          }
+
+          if (citations.length > 0) {
+            logger.info('Web search citations extracted', {
+              citationCount: citations.length,
+            });
+          }
+        }
+
         const llmResponse: LlmResponse = {
           content: choice.message.content,
           toolCalls,
           finished: choice.finish_reason === 'stop',
+          citations: citations.length > 0 ? citations : undefined,
           usage: response.usage
             ? {
                 promptTokens: response.usage.prompt_tokens,
@@ -220,6 +353,7 @@ export class LlmService implements ILlmService {
         logger.info('LLM response received', {
           hasContent: !!llmResponse.content,
           toolCallCount: toolCalls.length,
+          citationCount: citations.length,
           finishReason: choice.finish_reason,
           usage: llmResponse.usage,
         });
