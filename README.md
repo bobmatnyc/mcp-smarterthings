@@ -1,4 +1,4 @@
-# MCP SmartThings Server
+# MCP SmarterThings
 
 > **Unified Smart Home Control Platform**
 > A dual-mode server providing both Model Context Protocol (MCP) integration for AI assistants and Alexa Custom Skill support, with a powerful unified capability system for cross-platform device management.
