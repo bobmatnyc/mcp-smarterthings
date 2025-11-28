@@ -34,6 +34,8 @@ import type { DeviceId } from '../types/smartthings.js';
 import type { DeviceEvent } from '../types/device-events.js';
 import type { UnifiedDevice, UniversalDeviceId } from '../types/unified-device.js';
 import { detectEventGaps } from '../types/device-events.js';
+import type { ServiceContainer } from './ServiceContainer.js';
+import type { RuleMatch } from './AutomationService.js';
 import logger from '../utils/logger.js';
 
 // Helper function to safely convert UniversalDeviceId to DeviceId
@@ -71,7 +73,7 @@ export interface DeviceHealthData {
  */
 export interface IssuePattern {
   /** Pattern type */
-  type: 'rapid_changes' | 'repeated_failures' | 'connectivity_gap' | 'normal';
+  type: 'rapid_changes' | 'repeated_failures' | 'connectivity_gap' | 'automation_trigger' | 'normal';
 
   /** Human-readable description */
   description: string;
@@ -146,8 +148,11 @@ export interface DiagnosticContext {
   /** Related issue patterns */
   relatedIssues?: IssuePattern[];
 
-  /** Automations involving device */
+  /** Automations involving device (legacy) */
   automations?: Automation[];
+
+  /** Identified automations controlling device */
+  identifiedAutomations?: RuleMatch[];
 
   /** System-wide status */
   systemStatus?: SystemStatusReport;
@@ -214,6 +219,7 @@ export class DiagnosticWorkflow {
   private semanticIndex: SemanticIndex;
   private deviceService: IDeviceService;
   private deviceRegistry: DeviceRegistry;
+  private serviceContainer?: ServiceContainer;
 
   /**
    * Create DiagnosticWorkflow instance.
@@ -221,16 +227,21 @@ export class DiagnosticWorkflow {
    * @param semanticIndex Semantic device search service
    * @param deviceService Device operations service
    * @param deviceRegistry Device registry for lookups
+   * @param serviceContainer Optional service container for automation identification
    */
   constructor(
     semanticIndex: SemanticIndex,
     deviceService: IDeviceService,
-    deviceRegistry: DeviceRegistry
+    deviceRegistry: DeviceRegistry,
+    serviceContainer?: ServiceContainer
   ) {
     this.semanticIndex = semanticIndex;
     this.deviceService = deviceService;
     this.deviceRegistry = deviceRegistry;
-    logger.info('DiagnosticWorkflow initialized');
+    this.serviceContainer = serviceContainer;
+    logger.info('DiagnosticWorkflow initialized', {
+      automationServiceAvailable: !!serviceContainer,
+    });
   }
 
   /**
@@ -301,10 +312,7 @@ export class DiagnosticWorkflow {
    * @param device Resolved device (if applicable)
    * @returns Array of data gathering promises
    */
-  private buildDataGatheringPlan(
-    intent: DiagnosticIntent,
-    device?: UnifiedDevice
-  ): Promise<any>[] {
+  private buildDataGatheringPlan(intent: DiagnosticIntent, device?: UnifiedDevice): Promise<any>[] {
     const tasks: Promise<any>[] = [];
 
     switch (intent) {
@@ -322,7 +330,10 @@ export class DiagnosticWorkflow {
           tasks.push(this.getRecentEvents(toDeviceId(device.id), 100));
           tasks.push(this.detectPatterns(toDeviceId(device.id)));
           tasks.push(this.findSimilarDevices(device.id, 3));
-          // Note: automations would require additional service
+          // Add automation identification if service available
+          if (this.serviceContainer) {
+            tasks.push(this.identifyControllingAutomations(device.id));
+          }
         }
         break;
 
@@ -356,10 +367,7 @@ export class DiagnosticWorkflow {
    * @param context Diagnostic context to populate
    * @param results Settled promise results
    */
-  private populateContext(
-    context: DiagnosticContext,
-    results: PromiseSettledResult<any>[]
-  ): void {
+  private populateContext(context: DiagnosticContext, results: PromiseSettledResult<any>[]): void {
     for (const result of results) {
       if (result.status === 'fulfilled') {
         const data = result.value;
@@ -384,6 +392,9 @@ export class DiagnosticWorkflow {
           case 'automations':
             context.automations = data.value;
             break;
+          case 'identifiedAutomations':
+            context.identifiedAutomations = data.value;
+            break;
           case 'systemStatus':
             context.systemStatus = data.value;
             break;
@@ -406,9 +417,7 @@ export class DiagnosticWorkflow {
    * @param context Diagnostic context
    * @returns Complete diagnostic report
    */
-  private compileDiagnosticReport(
-    context: DiagnosticContext
-  ): DiagnosticReport {
+  private compileDiagnosticReport(context: DiagnosticContext): DiagnosticReport {
     const richContext = this.formatRichContext(context);
     const summary = this.generateSummary(context);
     const recommendations = this.generateRecommendations(context);
@@ -443,7 +452,8 @@ export class DiagnosticWorkflow {
       sections.push(`- **ID**: ${context.device.id}`);
       sections.push(`- **Room**: ${context.device.room || 'Not assigned'}`);
       sections.push(`- **Platform**: ${context.device.platform}`);
-      sections.push(`- **Capabilities**: ${Array.from(context.device.capabilities).join(', ')}`);
+      const capabilities = context.device.capabilities || [];
+      sections.push(`- **Capabilities**: ${Array.from(capabilities).join(', ')}`);
       if (context.device.manufacturer) {
         sections.push(`- **Manufacturer**: ${context.device.manufacturer}`);
       }
@@ -471,7 +481,9 @@ export class DiagnosticWorkflow {
       sections.push(`Showing ${Math.min(10, context.recentEvents.length)} most recent events:\n`);
 
       context.recentEvents.slice(0, 10).forEach((event) => {
-        sections.push(`- **${event.time}**: ${event.capability}.${event.attribute} = ${event.value}`);
+        sections.push(
+          `- **${event.time}**: ${event.capability}.${event.attribute} = ${event.value}`
+        );
       });
 
       if (context.recentEvents.length > 10) {
@@ -484,7 +496,9 @@ export class DiagnosticWorkflow {
       sections.push('\n## Similar Devices');
       context.similarDevices.forEach((result) => {
         const score = (result.score * 100).toFixed(0);
-        sections.push(`- **${result.device.metadata.label}** (${score}% match) - ${result.device.metadata.room || 'No room'}`);
+        sections.push(
+          `- **${result.device.metadata.label}** (${score}% match) - ${result.device.metadata.room || 'No room'}`
+        );
       });
     }
 
@@ -492,16 +506,34 @@ export class DiagnosticWorkflow {
     if (context.relatedIssues && context.relatedIssues.length > 0) {
       sections.push('\n## Related Issues Detected');
       context.relatedIssues.forEach((issue) => {
-        sections.push(`- **${issue.type}**: ${issue.description} (${issue.occurrences} occurrences, ${(issue.confidence * 100).toFixed(0)}% confidence)`);
+        sections.push(
+          `- **${issue.type}**: ${issue.description} (${issue.occurrences} occurrences, ${(issue.confidence * 100).toFixed(0)}% confidence)`
+        );
       });
     }
 
-    // Automations
+    // Automations (legacy format)
     if (context.automations && context.automations.length > 0) {
       sections.push('\n## Automations Involving This Device');
       context.automations.forEach((auto) => {
         const status = auto.enabled ? 'Enabled' : 'Disabled';
         sections.push(`- **${auto.name}** (${status}): ${auto.description || 'No description'}`);
+      });
+    }
+
+    // Identified Automations (enhanced format with roles)
+    if (context.identifiedAutomations && context.identifiedAutomations.length > 0) {
+      sections.push('\n## Identified Automations Controlling This Device');
+      context.identifiedAutomations.forEach((match) => {
+        const status = match.status || 'Unknown';
+        const confidence = (match.confidence * 100).toFixed(0);
+        sections.push(
+          `- **${match.ruleName}** (ID: ${match.ruleId}, Status: ${status}, Confidence: ${confidence}%)`
+        );
+        sections.push(`  - Role: ${match.deviceRoles.join(', ')}`);
+        if (match.evidence && match.evidence.length > 0) {
+          sections.push(`  - Evidence: ${match.evidence.join('; ')}`);
+        }
       });
     }
 
@@ -561,58 +593,186 @@ export class DiagnosticWorkflow {
    * @param context Diagnostic context
    * @returns Array of recommendations
    */
+  /**
+   * Manufacturer-to-app mapping for devices with proprietary automation systems.
+   * These manufacturers often have their own apps with automation features that
+   * are NOT visible via the SmartThings API.
+   */
+  private readonly MANUFACTURER_APPS: Record<string, string> = {
+    Sengled: 'Sengled Home',
+    Philips: 'Philips Hue',
+    LIFX: 'LIFX',
+    Wyze: 'Wyze',
+    'TP-Link': 'Kasa Smart',
+    Meross: 'Meross',
+    GE: 'C by GE',
+  };
+
+  /**
+   * Get manufacturer app name if manufacturer has proprietary automation system.
+   */
+  private getManufacturerApp(manufacturer?: string): string | undefined {
+    if (!manufacturer) return undefined;
+
+    for (const [key, app] of Object.entries(this.MANUFACTURER_APPS)) {
+      if (manufacturer.includes(key)) return app;
+    }
+    return undefined;
+  }
+
+  /**
+   * Generate evidence-based recommendations for diagnostic context.
+   *
+   * Design Decision: Evidence-based recommendations only (no speculation)
+   * Rationale: Users need actionable guidance based on observable facts, not speculation.
+   * Speculative recommendations (e.g., "check motion sensors" without motion sensor evidence)
+   * waste user time and erode trust in diagnostic system.
+   *
+   * Evidence-Based Template:
+   *   Evidence: [Observable fact from collected data]
+   *   Observation: [Interpretation of evidence]
+   *   Action: [Specific user action with context]
+   *   API Limitation: [Note if API cannot provide needed evidence]
+   *
+   * Trade-offs:
+   * - Fewer recommendations vs more complete: Better to provide fewer high-confidence
+   *   recommendations than many low-confidence guesses
+   * - Specificity vs generality: Evidence-based approach requires specific data collection
+   *   but provides more actionable guidance
+   *
+   * Related Ticket: 1M-345 - Diagnostic System Must Only Report Observable Evidence
+   */
   private generateRecommendations(context: DiagnosticContext): string[] {
     const recommendations: string[] = [];
 
-    // Offline device recommendations
+    // Offline device recommendations (EVIDENCE: device health status)
     if (context.healthData && !context.healthData.online) {
-      recommendations.push('Check device power supply and network connectivity');
-      recommendations.push('Verify SmartThings hub is online and accessible');
+      recommendations.push('Evidence: Device is offline.');
+      recommendations.push('Action: Check device power supply and network connectivity');
+      recommendations.push('Action: Verify SmartThings hub is online and accessible');
     }
 
-    // Low battery recommendations
+    // Low battery recommendations (EVIDENCE: battery level measurement)
     if (context.healthData?.batteryLevel && context.healthData.batteryLevel < 20) {
-      recommendations.push(`Battery level is low (${context.healthData.batteryLevel}%). Replace battery soon.`);
-    }
-
-    // Connectivity gap recommendations
-    if (context.relatedIssues?.some((issue) => issue.type === 'connectivity_gap')) {
-      recommendations.push('Detected connectivity gaps. Check network stability and hub logs.');
-      recommendations.push('Verify device is within range of SmartThings hub or mesh network.');
-    }
-
-    // Rapid changes recommendations (ENHANCED)
-    const rapidIssue = context.relatedIssues?.find((i) => i.type === 'rapid_changes');
-    if (rapidIssue) {
-      // Base recommendation
-      recommendations.push('Check SmartThings app → Automations for rules affecting this device');
-
-      // High-confidence automation trigger
-      if (rapidIssue.confidence >= 0.95) {
-        recommendations.push(
-          'High confidence automation trigger detected. Look for "when device turns off, turn back on" logic'
-        );
-      }
-
-      // Motion sensor check (if similar devices include sensors)
-      const hasSensorNearby = context.similarDevices?.some((d) =>
-        Array.from(d.device.metadata.capabilities).includes('motionSensor')
-      );
-      if (hasSensorNearby) {
-        recommendations.push(
-          'Review motion sensor automations that may be triggering this device'
-        );
-      }
-
-      // Time-based patterns
       recommendations.push(
-        'Check for scheduled routines executing around the time of the issue'
+        `Evidence: Battery level is ${context.healthData.batteryLevel}% (below 20% threshold).`
       );
+      recommendations.push('Action: Replace battery soon to prevent device offline issues.');
+    }
 
-      // Automation loop warning
-      if (rapidIssue.occurrences > 5) {
+    // Connectivity gap recommendations (EVIDENCE: detected gaps in event stream)
+    if (context.relatedIssues?.some((issue) => issue.type === 'connectivity_gap')) {
+      recommendations.push('Evidence: Connectivity gaps detected in event history.');
+      recommendations.push('Action: Check network stability and hub logs for connection issues.');
+      recommendations.push('Action: Verify device is within range of SmartThings hub or mesh network.');
+    }
+
+    // Rapid changes and automation trigger recommendations
+    const rapidIssue = context.relatedIssues?.find((i) => i.type === 'rapid_changes');
+    const automationIssue = context.relatedIssues?.find((i) => i.type === 'automation_trigger');
+    const hasAutomationPattern = rapidIssue || automationIssue;
+
+    if (hasAutomationPattern) {
+      const issue = automationIssue || rapidIssue;
+
+      // PRIORITY 1: Manufacturer app check (if proprietary manufacturer detected)
+      if (context.device?.manufacturer) {
+        const manufacturerApp = this.getManufacturerApp(context.device.manufacturer);
+
+        if (manufacturerApp) {
+          const confidencePercent = ((issue?.confidence || 0) * 100).toFixed(0);
+          recommendations.push(
+            `⚠️ PRIORITY: ${context.device.manufacturer} devices often have manufacturer-specific automation features.`
+          );
+          recommendations.push(
+            `Evidence: Automation pattern detected (${confidencePercent}% confidence) but manufacturer app automations are NOT visible via SmartThings API.`
+          );
+          recommendations.push(
+            `Action: Open ${manufacturerApp} app FIRST → Check for automations, schedules, or scenes controlling "${context.device.label}".`
+          );
+
+          if (issue && issue.confidence >= 0.95) {
+            recommendations.push(
+              `Observation: High confidence (${confidencePercent}%) - manufacturer app automation should be investigated first.`
+            );
+          }
+        }
+      }
+
+      // PRIORITY 2: SmartThings identified automations (EVIDENCE: specific automation IDs)
+      if (context.identifiedAutomations && context.identifiedAutomations.length > 0) {
         recommendations.push(
-          'ALERT: Detected multiple rapid changes suggesting automation loop. Review automation conditions to prevent conflicts.'
+          `Evidence: ${context.identifiedAutomations.length} SmartThings automation(s) identified controlling this device:`
+        );
+
+        for (const auto of context.identifiedAutomations) {
+          recommendations.push(`  - "${auto.ruleName}" (ID: ${auto.ruleId}, Status: ${auto.status || 'Unknown'})`);
+          recommendations.push(`    Role: ${auto.deviceRoles.join(', ')}`);
+          recommendations.push(
+            `    Action: Open SmartThings app → Automations → Search for "${auto.ruleName}" → Review and disable or adjust conditions`
+          );
+        }
+
+        // Motion sensor check (EVIDENCE-BASED: only if motion sensor in identified automations)
+        const motionSensorAutomations = context.identifiedAutomations.filter(
+          (auto) =>
+            auto.deviceRoles.some((role) => role.toLowerCase().includes('motion')) ||
+            auto.ruleName.toLowerCase().includes('motion')
+        );
+
+        if (motionSensorAutomations.length > 0) {
+          const firstMotionAuto = motionSensorAutomations[0];
+          if (firstMotionAuto) {
+            recommendations.push(
+              `Evidence: Automation "${firstMotionAuto.ruleName}" uses motion sensor as trigger.`
+            );
+            recommendations.push(
+              'Action: Check motion sensor activity in SmartThings app → Devices → [Motion Sensor] → History.'
+            );
+            recommendations.push(
+              'Expected pattern: Motion sensor event should occur within seconds before device state change.'
+            );
+          }
+        }
+      } else {
+        // PRIORITY 3: SmartThings generic guidance (FALLBACK when identification fails)
+        const confidencePercent = ((issue?.confidence || 0) * 100).toFixed(0);
+        recommendations.push(
+          `Evidence: Automation pattern detected (${confidencePercent}% confidence) but unable to identify specific SmartThings automation.`
+        );
+        recommendations.push(
+          '⚠️ API Limitation: SmartThings API cannot identify specific automation. Manual investigation required.'
+        );
+        recommendations.push('Action: Open SmartThings app → Automations → Search for rules affecting this device');
+        if (context.device) {
+          recommendations.push(`Observable pattern: Look for "${context.device.label}" as ACTION target (not trigger)`);
+          recommendations.push(
+            `Expected logic: "When [trigger condition], turn ${context.device.label} ON" or similar re-trigger behavior`
+          );
+        }
+      }
+
+      // High-confidence automation trigger warning (EVIDENCE: confidence score)
+      if (issue && issue.confidence >= 0.95) {
+        recommendations.push(
+          `Evidence: ${((issue.confidence || 0) * 100).toFixed(0)}% confidence automation trigger detected (very high confidence).`
+        );
+        recommendations.push(
+          'Observable pattern: Device state changes rapidly after manual control (typical automation re-trigger signature).'
+        );
+        recommendations.push('Action: Look for "when device turns off, turn back on" logic in automations');
+      }
+
+      // Automation loop warning (EVIDENCE: multiple rapid changes)
+      if (issue && issue.occurrences > 5) {
+        recommendations.push(
+          `ALERT: Evidence shows ${issue.occurrences} rapid changes suggesting automation loop.`
+        );
+        recommendations.push(
+          'Observation: Multiple automations may be triggering each other in a feedback loop.'
+        );
+        recommendations.push(
+          'Action: Review automation conditions to prevent conflicts. Look for circular dependencies.'
         );
       }
     }
@@ -686,7 +846,9 @@ export class DiagnosticWorkflow {
    * @param deviceId Device ID
    * @returns Health data with type marker
    */
-  private async getDeviceHealth(deviceId: DeviceId): Promise<{ type: string; value: DeviceHealthData }> {
+  private async getDeviceHealth(
+    deviceId: DeviceId
+  ): Promise<{ type: string; value: DeviceHealthData }> {
     try {
       const device = this.deviceRegistry.getDevice(toUniversalId(deviceId));
       const status = await this.deviceService.getDeviceStatus(deviceId);
@@ -798,7 +960,9 @@ export class DiagnosticWorkflow {
    * @param deviceId Device ID to analyze
    * @returns Issue patterns with type marker
    */
-  private async detectPatterns(deviceId: DeviceId): Promise<{ type: string; value: IssuePattern[] }> {
+  private async detectPatterns(
+    deviceId: DeviceId
+  ): Promise<{ type: string; value: IssuePattern[] }> {
     try {
       // Step 1: Retrieve events for pattern analysis
       const result = await this.getRecentEvents(deviceId, 100);
@@ -877,9 +1041,7 @@ export class DiagnosticWorkflow {
    */
   private detectRapidChanges(events: DeviceEvent[]): IssuePattern | null {
     // Filter to state-change events only (switch, lock, contact)
-    const stateEvents = events.filter((e) =>
-      ['switch', 'lock', 'contact'].includes(e.attribute)
-    );
+    const stateEvents = events.filter((e) => ['switch', 'lock', 'contact'].includes(e.attribute));
 
     if (stateEvents.length < 2) {
       return null; // Need at least 2 events to calculate gaps
@@ -1014,16 +1176,99 @@ export class DiagnosticWorkflow {
     }
 
     // Find largest gap for description
-    const largestGap = gaps.reduce((max, gap) =>
-      gap.durationMs > max.durationMs ? gap : max
-    );
+    const largestGap = gaps.reduce((max, gap) => (gap.durationMs > max.durationMs ? gap : max));
 
     return {
       type: 'connectivity_gap',
       description: `Found ${connectivityGaps.length} connectivity gaps (largest: ${largestGap.durationText})`,
       occurrences: connectivityGaps.length,
-      confidence: 0.80,
+      confidence: 0.8,
     };
+  }
+
+  /**
+   * Identify automations controlling a device.
+   *
+   * Uses AutomationService to find rules that control the specified device.
+   * Provides graceful fallback if AutomationService is unavailable or API fails.
+   *
+   * Algorithm:
+   * 1. Extract SmartThings device ID from universal ID
+   * 2. Get device location from device registry
+   * 3. Query AutomationService for rules affecting device
+   * 4. Return matches with confidence scores and roles
+   *
+   * Time Complexity: O(1) cache hit, O(R×A) cache miss
+   *   where R=rules in location, A=actions per rule
+   * Performance: <10ms cached, <500ms uncached
+   *
+   * Error Handling:
+   * - ServiceContainer not provided: Returns empty array
+   * - AutomationService unavailable: Returns empty array
+   * - Device not found: Returns empty array
+   * - Location not found: Returns empty array
+   * - API failure: Logs warning, returns empty array
+   *
+   * @param deviceId Universal device ID
+   * @returns Automation matches with type marker
+   */
+  private async identifyControllingAutomations(
+    deviceId: UniversalDeviceId
+  ): Promise<{ type: string; value: RuleMatch[] }> {
+    try {
+      // Check if ServiceContainer is available
+      if (!this.serviceContainer) {
+        logger.debug('ServiceContainer not available, skipping automation identification', {
+          deviceId,
+        });
+        return { type: 'identifiedAutomations', value: [] };
+      }
+
+      // Extract SmartThings device ID from universal ID
+      // Format: "smartthings:ae92f481-1425-4436-b332-de44ff915565"
+      const parts = deviceId.split(':');
+      if (parts.length !== 2 || parts[0] !== 'smartthings') {
+        logger.debug('Non-SmartThings device, skipping automation identification', {
+          deviceId,
+          platform: parts[0],
+        });
+        return { type: 'identifiedAutomations', value: [] };
+      }
+
+      const stDeviceId = parts[1] as DeviceId;
+
+      // Get full device info from SmartThings API to extract locationId
+      const deviceInfo = await this.deviceService.getDevice(stDeviceId);
+      const locationId = deviceInfo.locationId;
+
+      if (!locationId) {
+        logger.warn('Device has no location, skipping automation identification', {
+          deviceId,
+        });
+        return { type: 'identifiedAutomations', value: [] };
+      }
+
+      // Query AutomationService
+      const automationService = this.serviceContainer.getAutomationService();
+      const matches = await automationService.findRulesForDevice(stDeviceId, locationId as any);
+
+      logger.info('Automation identification completed', {
+        deviceId,
+        matchesFound: matches.length,
+      });
+
+      return {
+        type: 'identifiedAutomations',
+        value: matches,
+      };
+    } catch (error) {
+      // Graceful degradation: log warning but don't fail diagnostic workflow
+      logger.warn('Automation identification failed, continuing with pattern-only diagnosis', {
+        deviceId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return { type: 'identifiedAutomations', value: [] };
+    }
   }
 
   /**
@@ -1072,6 +1317,7 @@ export class DiagnosticWorkflow {
     if (context.similarDevices) count += context.similarDevices.length;
     if (context.relatedIssues) count += context.relatedIssues.length;
     if (context.automations) count += context.automations.length;
+    if (context.identifiedAutomations) count += context.identifiedAutomations.length;
     if (context.systemStatus) count++;
     return count;
   }

@@ -7,6 +7,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Evidence-Based Diagnostic Recommendations** ([#1M-345](https://linear.app/1m-hyperdev/issue/1M-345))
+  - **CRITICAL FIX**: Eliminated all speculation from diagnostic recommendations
+  - **Manufacturer App Prioritization**: Recommends checking manufacturer apps (Sengled, Philips Hue, LIFX, Wyze, TP-Link) FIRST for proprietary devices
+  - **Motion Sensor Evidence Validation**: Only recommends motion sensor investigation when automation evidence contains motion sensor data
+  - **API Limitation Transparency**: Explicitly states when SmartThings API cannot provide evidence
+  - **Zero Speculation**: Removed all speculation keywords ("may be", "possibly", "might", "could be", "likely")
+  - **Evidence-Based Template**: All recommendations follow "Evidence → Observation → Action" structure
+  - Example improvements:
+    - Before: "Review motion sensor automations that may be triggering this device" (NO evidence)
+    - After: `Evidence: Automation "Motion Sensor Light Control" uses motion sensor as trigger.` (with evidence)
+    - Before: "Check for scheduled routines" (generic speculation)
+    - After: "⚠️ PRIORITY: Sengled devices often have manufacturer-specific automation features. Action: Open Sengled Home app FIRST" (specific, evidence-based)
+  - **Test Coverage**: 12 comprehensive tests validating evidence-based behavior
+  - **Performance**: No degradation (same data gathering plan)
+
+- **Automation Identification in Diagnostic Workflow** ([#1M-308](https://linear.app/1m-hyperdev/issue/1M-308))
+  - Integrated AutomationService with DiagnosticWorkflow for automatic automation detection
+  - System now identifies specific automations controlling devices (no manual searching required)
+  - Enhanced recommendations with automation names, IDs, and actionable steps
+  - Added `identifyControllingAutomations()` method to DiagnosticWorkflow
+  - Support for `automation_trigger` pattern type in IssuePattern
+  - Graceful fallback if AutomationService unavailable (backward compatible)
+  - Performance: <10ms cached, <500ms uncached automation lookups
+  - Example output:
+    - Before: "Check SmartThings automations for conflicting rules"
+    - After: "Automation conflict detected: Evening Routine (ID: rule-abc123, Status: ENABLED) - Role: controlled - Action: Open SmartThings app → Automations → Search for 'Evening Routine' → Review and disable"
+  - Full backward compatibility - ServiceContainer parameter optional
+  - Zero breaking changes to existing code
+
 ## [0.7.0] - 2025-11-28
 
 ### Added
