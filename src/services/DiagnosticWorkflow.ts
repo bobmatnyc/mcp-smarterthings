@@ -33,6 +33,7 @@ import type { DeviceRegistry } from '../abstract/DeviceRegistry.js';
 import type { DeviceId } from '../types/smartthings.js';
 import type { DeviceEvent } from '../types/device-events.js';
 import type { UnifiedDevice, UniversalDeviceId } from '../types/unified-device.js';
+import { detectEventGaps } from '../types/device-events.js';
 import logger from '../utils/logger.js';
 
 // Helper function to safely convert UniversalDeviceId to DeviceId
@@ -547,9 +548,15 @@ export class DiagnosticWorkflow {
   /**
    * Generate troubleshooting recommendations.
    *
-   * Design Decision: Rule-based recommendations
+   * Design Decision: Rule-based recommendations with pattern-specific guidance
    * Rationale: Simple rules cover 80% of common issues. LLM can elaborate
    * on these recommendations using full diagnostic context.
+   *
+   * Enhanced with:
+   * - Confidence-based recommendation specificity
+   * - Motion sensor automation detection
+   * - Time-based pattern analysis
+   * - Actionable step-by-step guidance
    *
    * @param context Diagnostic context
    * @returns Array of recommendations
@@ -568,14 +575,46 @@ export class DiagnosticWorkflow {
       recommendations.push(`Battery level is low (${context.healthData.batteryLevel}%). Replace battery soon.`);
     }
 
-    // Event gap recommendations
+    // Connectivity gap recommendations
     if (context.relatedIssues?.some((issue) => issue.type === 'connectivity_gap')) {
       recommendations.push('Detected connectivity gaps. Check network stability and hub logs.');
+      recommendations.push('Verify device is within range of SmartThings hub or mesh network.');
     }
 
-    // Rapid changes recommendations
-    if (context.relatedIssues?.some((issue) => issue.type === 'rapid_changes')) {
-      recommendations.push('Detected rapid state changes. Check for automation loops or faulty sensors.');
+    // Rapid changes recommendations (ENHANCED)
+    const rapidIssue = context.relatedIssues?.find((i) => i.type === 'rapid_changes');
+    if (rapidIssue) {
+      // Base recommendation
+      recommendations.push('Check SmartThings app → Automations for rules affecting this device');
+
+      // High-confidence automation trigger
+      if (rapidIssue.confidence >= 0.95) {
+        recommendations.push(
+          'High confidence automation trigger detected. Look for "when device turns off, turn back on" logic'
+        );
+      }
+
+      // Motion sensor check (if similar devices include sensors)
+      const hasSensorNearby = context.similarDevices?.some((d) =>
+        Array.from(d.device.metadata.capabilities).includes('motionSensor')
+      );
+      if (hasSensorNearby) {
+        recommendations.push(
+          'Review motion sensor automations that may be triggering this device'
+        );
+      }
+
+      // Time-based patterns
+      recommendations.push(
+        'Check for scheduled routines executing around the time of the issue'
+      );
+
+      // Automation loop warning
+      if (rapidIssue.occurrences > 5) {
+        recommendations.push(
+          'ALERT: Detected multiple rapid changes suggesting automation loop. Review automation conditions to prevent conflicts.'
+        );
+      }
     }
 
     return recommendations;
@@ -748,17 +787,242 @@ export class DiagnosticWorkflow {
   /**
    * Detect issue patterns in event history.
    *
-   * Future Enhancement: Implement pattern detection algorithms
-   * Currently returns placeholder.
+   * Analyzes device event timeline for:
+   * - Rapid state changes (<10s gaps) indicating automation
+   * - Automation triggers (<5s gaps, high confidence)
+   * - Connectivity gaps (>1h event gaps)
    *
-   * @param _deviceId Device ID (unused in current implementation)
+   * Performance: O(n log n) where n = number of events
+   * Target: <100ms for 100 events
+   *
+   * @param deviceId Device ID to analyze
    * @returns Issue patterns with type marker
    */
-  private async detectPatterns(_deviceId: DeviceId): Promise<{ type: string; value: IssuePattern[] }> {
-    // Placeholder: Pattern detection not yet implemented
+  private async detectPatterns(deviceId: DeviceId): Promise<{ type: string; value: IssuePattern[] }> {
+    try {
+      // Step 1: Retrieve events for pattern analysis
+      const result = await this.getRecentEvents(deviceId, 100);
+      const events = result.value;
+
+      if (!events || events.length === 0) {
+        // No events to analyze - return normal pattern
+        return {
+          type: 'patterns',
+          value: [
+            {
+              type: 'normal',
+              description: 'No event data available for analysis',
+              occurrences: 0,
+              confidence: 0.95,
+            },
+          ],
+        };
+      }
+
+      // Step 2: Run pattern detection algorithms
+      const patterns: IssuePattern[] = [];
+
+      // Algorithm 1: Detect rapid state changes
+      const rapidPattern = this.detectRapidChanges(events);
+      if (rapidPattern) patterns.push(rapidPattern);
+
+      // Algorithm 2: Detect automation triggers
+      const automationPattern = this.detectAutomationTriggers(events);
+      if (automationPattern) patterns.push(automationPattern);
+
+      // Algorithm 3: Detect connectivity gaps
+      const connectivityPattern = this.detectConnectivityIssues(events);
+      if (connectivityPattern) patterns.push(connectivityPattern);
+
+      // Step 3: Add "normal" pattern if no issues detected
+      if (patterns.length === 0) {
+        patterns.push({
+          type: 'normal',
+          description: 'No unusual patterns detected',
+          occurrences: 0,
+          confidence: 0.95,
+        });
+      }
+
+      // Step 4: Sort by confidence (highest first)
+      patterns.sort((a, b) => b.confidence - a.confidence);
+
+      return {
+        type: 'patterns',
+        value: patterns,
+      };
+    } catch (error) {
+      logger.error('Pattern detection failed', {
+        deviceId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      // Graceful degradation: return empty patterns
+      return { type: 'patterns', value: [] };
+    }
+  }
+
+  /**
+   * Detect rapid state changes in device events.
+   *
+   * Algorithm: Analyzes time gaps between consecutive state changes
+   * - Automation trigger: <5s gap (95% confidence)
+   * - Rapid change: 5-10s gap (85% confidence)
+   * - Normal: >10s gap (not flagged)
+   *
+   * Time Complexity: O(n log n) for sorting
+   * Performance Target: <50ms for 100 events
+   *
+   * @param events Device events to analyze
+   * @returns IssuePattern if rapid changes detected, null otherwise
+   */
+  private detectRapidChanges(events: DeviceEvent[]): IssuePattern | null {
+    // Filter to state-change events only (switch, lock, contact)
+    const stateEvents = events.filter((e) =>
+      ['switch', 'lock', 'contact'].includes(e.attribute)
+    );
+
+    if (stateEvents.length < 2) {
+      return null; // Need at least 2 events to calculate gaps
+    }
+
+    // Sort by epoch timestamp (oldest first for sequential analysis)
+    const sorted = [...stateEvents].sort((a, b) => a.epoch - b.epoch);
+
+    // Calculate time gaps between consecutive state changes
+    const rapidChanges: Array<{ gapMs: number; isAutomation: boolean }> = [];
+
+    for (let i = 1; i < sorted.length; i++) {
+      const prev = sorted[i - 1];
+      const curr = sorted[i];
+
+      if (!prev || !curr) continue;
+
+      const gapMs = curr.epoch - prev.epoch;
+
+      // Only count as rapid if state actually changed (OFF→ON or ON→OFF)
+      if (prev.value !== curr.value && gapMs < 10000) {
+        rapidChanges.push({
+          gapMs,
+          isAutomation: gapMs < 5000, // <5s = likely automation
+        });
+      }
+    }
+
+    if (rapidChanges.length === 0) {
+      return null;
+    }
+
+    // Calculate confidence score
+    const automationTriggers = rapidChanges.filter((c) => c.isAutomation).length;
+    const confidence = automationTriggers > 0 ? 0.95 : 0.85;
+
     return {
-      type: 'patterns',
-      value: [],
+      type: 'rapid_changes',
+      description: `Detected ${rapidChanges.length} rapid state changes (${automationTriggers} likely automation triggers)`,
+      occurrences: rapidChanges.length,
+      confidence,
+    };
+  }
+
+  /**
+   * Detect automation trigger patterns.
+   *
+   * Algorithm: Identifies "immediate re-trigger" pattern (OFF→ON within 5s)
+   * - Odd-hour events (1-5 AM) increase confidence (98%)
+   * - Regular re-triggers indicate automation control
+   *
+   * Time Complexity: O(n log n)
+   * Performance Target: <40ms for 100 events
+   *
+   * @param events Device events to analyze
+   * @returns IssuePattern if automation triggers detected, null otherwise
+   */
+  private detectAutomationTriggers(events: DeviceEvent[]): IssuePattern | null {
+    const stateEvents = events.filter((e) => e.attribute === 'switch');
+
+    if (stateEvents.length < 2) {
+      return null;
+    }
+
+    const sorted = [...stateEvents].sort((a, b) => a.epoch - b.epoch);
+
+    // Look for "immediate re-trigger" pattern (OFF→ON within 5s)
+    const reTriggers: Array<{ gapMs: number; hour: number }> = [];
+
+    for (let i = 1; i < sorted.length; i++) {
+      const prev = sorted[i - 1];
+      const curr = sorted[i];
+
+      if (!prev || !curr) continue;
+
+      if (prev.value === 'off' && curr.value === 'on') {
+        const gapMs = curr.epoch - prev.epoch;
+        if (gapMs < 5000) {
+          reTriggers.push({
+            gapMs,
+            hour: new Date(curr.time).getHours(),
+          });
+        }
+      }
+    }
+
+    if (reTriggers.length === 0) {
+      return null;
+    }
+
+    // Check for odd-hour activity (automation indicator)
+    const oddHourEvents = reTriggers.filter((t) => t.hour >= 1 && t.hour <= 5);
+    const confidence = oddHourEvents.length > 0 ? 0.98 : 0.95;
+
+    const avgGapMs = reTriggers.reduce((sum, t) => sum + t.gapMs, 0) / reTriggers.length;
+    const avgGapSeconds = Math.round(avgGapMs / 1000);
+
+    return {
+      type: 'rapid_changes', // Maps to rapid_changes type
+      description: `Detected automation: ${reTriggers.length} immediate re-triggers (avg ${avgGapSeconds}s gap)`,
+      occurrences: reTriggers.length,
+      confidence,
+    };
+  }
+
+  /**
+   * Detect connectivity issues via event gaps.
+   *
+   * Algorithm: Reuses existing detectEventGaps() utility
+   * - Gaps >1 hour suggest connectivity issues
+   * - Leverages likelyConnectivityIssue flag from detectEventGaps
+   *
+   * Time Complexity: O(n log n)
+   * Performance Target: <20ms for 100 events
+   *
+   * @param events Device events to analyze
+   * @returns IssuePattern if connectivity gaps detected, null otherwise
+   */
+  private detectConnectivityIssues(events: DeviceEvent[]): IssuePattern | null {
+    // Reuse existing detectEventGaps() function with 1-hour threshold
+    const gaps = detectEventGaps(events, 60 * 60 * 1000);
+
+    if (gaps.length === 0) {
+      return null;
+    }
+
+    // Filter to likely connectivity issues
+    const connectivityGaps = gaps.filter((g) => g.likelyConnectivityIssue);
+
+    if (connectivityGaps.length === 0) {
+      return null;
+    }
+
+    // Find largest gap for description
+    const largestGap = gaps.reduce((max, gap) =>
+      gap.durationMs > max.durationMs ? gap : max
+    );
+
+    return {
+      type: 'connectivity_gap',
+      description: `Found ${connectivityGaps.length} connectivity gaps (largest: ${largestGap.durationText})`,
+      occurrences: connectivityGaps.length,
+      confidence: 0.80,
     };
   }
 
