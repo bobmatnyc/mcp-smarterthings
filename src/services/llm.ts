@@ -303,14 +303,17 @@ export class LlmService implements ILlmService {
         if (choice.message.tool_calls) {
           for (const toolCall of choice.message.tool_calls) {
             try {
+              // Handle empty or undefined arguments (for tools with no parameters)
+              const argsString = toolCall.function.arguments || '{}';
               toolCalls.push({
                 id: toolCall.id,
                 name: toolCall.function.name,
-                arguments: JSON.parse(toolCall.function.arguments),
+                arguments: JSON.parse(argsString),
               });
             } catch (error) {
               logger.error('Failed to parse tool call arguments', {
                 toolCall: toolCall.function.name,
+                arguments: toolCall.function.arguments,
                 error: error instanceof Error ? error.message : String(error),
               });
               throw new Error(

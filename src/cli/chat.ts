@@ -97,8 +97,8 @@ function parseCliArgs(): CliArgs {
  */
 function displayHelp(): void {
   const help = `
-${chalk.bold.cyan('MCP SmartThings Chatbot')}
-${chalk.gray('Natural language interface for SmartThings home automation')}
+${chalk.bold.cyan('SmarterThings')} ${chalk.gray('- The LLM Controller for SmartThings')}
+${chalk.gray('Natural language interface powered by AI')}
 
 ${chalk.bold('Usage:')}
   npm run chat [options]
