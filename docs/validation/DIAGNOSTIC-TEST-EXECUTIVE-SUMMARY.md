@@ -203,7 +203,7 @@ Actual:
 **Created Documents:**
 1. `DIAGNOSTIC-FRAMEWORK-TEST-REPORT.md` - Comprehensive technical report (30+ pages)
 2. `DIAGNOSTIC-TEST-SUMMARY.md` - Test results summary
-3. `TICKETS-TO-CREATE.md` - Detailed ticket specifications
+3. `docs/planning/TICKETS-TO-CREATE.md` - Detailed ticket specifications
 4. `DIAGNOSTIC-TEST-EXECUTIVE-SUMMARY.md` - This document
 
 **Test Code:**

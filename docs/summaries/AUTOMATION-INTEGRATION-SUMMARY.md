@@ -239,7 +239,7 @@ Recommendations:
 - `test-automation-integration.ts` (new integration test)
 
 ### Documentation
-- `AUTOMATION-INTEGRATION-SUMMARY.md` (this file)
+- `docs/summaries/AUTOMATION-INTEGRATION-SUMMARY.md` (this file)
 
 ## Deployment Notes
 
