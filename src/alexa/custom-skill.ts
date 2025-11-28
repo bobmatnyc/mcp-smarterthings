@@ -97,7 +97,7 @@ async function getOrCreateOrchestrator(sessionId: string): Promise<ChatOrchestra
   const mcpClient = new McpClient();
   const llmService = new LlmService({
     apiKey: process.env['OPENROUTER_API_KEY'] || '',
-    model: process.env['OPENROUTER_MODEL'] || 'deepseek/deepseek-chat',
+    model: process.env['OPENROUTER_MODEL'] || 'anthropic/claude-sonnet-4.5',
   });
   const orchestrator = new ChatOrchestrator(mcpClient, llmService);
 

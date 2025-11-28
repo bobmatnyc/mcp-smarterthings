@@ -4,12 +4,14 @@ import { environment } from './config/environment.js';
 import {
   deviceControlTools,
   deviceQueryTools,
+  deviceEventTools,
   sceneTools,
   systemTools,
   managementTools,
   diagnosticTools,
   initializeDeviceControlTools,
   initializeDeviceQueryTools,
+  initializeDeviceEventTools,
   initializeSceneTools,
   initializeManagementTools,
   initializeDiagnosticTools,
@@ -58,6 +60,7 @@ export function createMcpServer(): Server {
   // This injects the service dependencies into each tool module
   initializeDeviceControlTools(serviceContainer);
   initializeDeviceQueryTools(serviceContainer);
+  initializeDeviceEventTools(serviceContainer);
   initializeSceneTools(serviceContainer);
   initializeManagementTools(serviceContainer);
   initializeDiagnosticTools(serviceContainer);
@@ -80,6 +83,7 @@ export function createMcpServer(): Server {
   const allTools = {
     ...deviceControlTools,
     ...deviceQueryTools,
+    ...deviceEventTools,
     ...sceneTools,
     ...systemTools,
     ...managementTools,

@@ -198,6 +198,9 @@ describe('CustomServiceProvider', () => {
         .fn()
         .mockResolvedValue({ deviceId: 'custom', name: 'Custom Device', capabilities: [] }),
       getDeviceCapabilities: vi.fn().mockResolvedValue([]),
+      getDeviceEvents: vi
+        .fn()
+        .mockResolvedValue({ events: [], metadata: {}, summary: 'No events' }),
     } as IDeviceService);
 
     mockLocationFactory = vi.fn().mockResolvedValue({

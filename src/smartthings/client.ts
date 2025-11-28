@@ -12,8 +12,21 @@ import type {
   LocationId,
   SceneInfo,
   SceneId,
+  CapabilityName,
 } from '../types/smartthings.js';
 import type { ISmartThingsService } from '../services/interfaces.js';
+import type {
+  DeviceEventOptions,
+  DeviceEventResult,
+  DeviceEvent,
+} from '../types/device-events.js';
+import {
+  parseTimeRange,
+  validateRetentionLimit,
+  detectEventGaps,
+  createDeviceEvent,
+  formatDuration,
+} from '../types/device-events.js';
 
 /**
  * SmartThings API client wrapper with retry logic and error handling.
@@ -455,6 +468,290 @@ export class SmartThingsService implements ISmartThingsService {
     throw new Error(
       `Multiple scenes match "${sceneName}": ${matchNames}. Please be more specific.`
     );
+  }
+
+  /**
+   * Get device event history with filtering and metadata.
+   *
+   * Design Decision: Client-side filtering for capabilities and attributes
+   * Rationale: SmartThings API doesn't support capability/attribute filtering.
+   * Client-side filtering provides flexibility while maintaining API compatibility.
+   *
+   * Performance Considerations:
+   * - AsyncIterable processing: Efficient streaming of events
+   * - Early limit application: Stop processing after limit reached
+   * - Gap detection: Only performed if includeMetadata=true
+   * - Location caching: Device lookup cached within request scope
+   *
+   * Error Handling:
+   * - Device not found: Clear error message with deviceId
+   * - Invalid time range: Validation error with expected format
+   * - API errors: Handled by retryWithBackoff wrapper
+   * - Empty results: Valid result with empty events array
+   *
+   * Trade-offs:
+   * - Flexibility: Client-side filtering more flexible than API filters
+   * - Network: May fetch more events than needed (then filter)
+   * - Accuracy: SDK handles pagination and rate limiting
+   *
+   * @param deviceId Device to query events for
+   * @param options Query options (time range, filters, limits)
+   * @returns Event result with events, metadata, and summary
+   * @throws Error if device not found or time range invalid
+   *
+   * @example
+   * ```typescript
+   * // Get last 24 hours of switch events
+   * const result = await smartThingsService.getDeviceEvents(
+   *   deviceId,
+   *   {
+   *     startTime: '24h',
+   *     capabilities: ['switch' as CapabilityName],
+   *     includeMetadata: true
+   *   }
+   * );
+   *
+   * console.log(result.summary); // "Found 15 switch events in last 24 hours"
+   * console.log(result.metadata.gaps); // [{ start, end, duration }]
+   * ```
+   */
+  async getDeviceEvents(
+    deviceId: DeviceId,
+    options: DeviceEventOptions
+  ): Promise<DeviceEventResult> {
+    logger.debug('Fetching device events', { deviceId, options });
+
+    // Step 1: Validate and prepare options
+    const startTime = options.startTime ? parseTimeRange(options.startTime) : undefined;
+    const endTime = options.endTime ? parseTimeRange(options.endTime) : new Date();
+    const limit = Math.min(options.limit ?? 100, 500); // Cap at 500 for safety
+    const includeMetadata = options.includeMetadata ?? true;
+
+    // Validate retention limit if startTime provided
+    let retentionWarning: string | undefined;
+    let adjustedStart = startTime;
+
+    if (startTime) {
+      const validation = validateRetentionLimit(startTime);
+      if (!validation.valid && validation.adjustedStart) {
+        adjustedStart = validation.adjustedStart;
+        retentionWarning = validation.message;
+        logger.warn('Time range exceeds retention limit', {
+          original: startTime.toISOString(),
+          adjusted: adjustedStart.toISOString(),
+        });
+      }
+    }
+
+    // Get device info for locationId if not provided
+    let locationId: LocationId | undefined = options.locationId;
+    let deviceName: string | undefined;
+
+    if (!locationId) {
+      try {
+        const device = await this.getDevice(deviceId);
+        locationId = device.locationId ? (device.locationId as LocationId) : undefined;
+        deviceName = device.name;
+        logger.debug('Retrieved locationId from device', { deviceId, locationId });
+      } catch (error) {
+        throw new Error(
+          `Failed to get device information for ${deviceId}. Device may not exist.`
+        );
+      }
+    }
+
+    if (!locationId) {
+      throw new Error(
+        `Unable to determine locationId for device ${deviceId}. Please provide locationId in options.`
+      );
+    }
+
+    // Step 2: Call SmartThings SDK with retry logic
+    const rawEvents: DeviceEvent[] = [];
+    let hasMore = false;
+
+    try {
+      const result = await retryWithBackoff(async () => {
+        const historyOptions = {
+          deviceId,
+          locationId,
+          startTime: adjustedStart,
+          endTime: endTime,
+          oldestFirst: options.oldestFirst ?? false,
+        };
+
+        logger.debug('Calling SmartThings history API', historyOptions);
+
+        // Call SDK history API (returns PaginatedList)
+        return await this.client.history.devices(historyOptions);
+      });
+
+      // Process the items from the paginated result
+      const activities = result.items ?? [];
+
+      for (const activity of activities) {
+        // Early exit if limit reached
+        if (rawEvents.length >= limit) {
+          hasMore = true;
+          break;
+        }
+
+        // Convert to DeviceEvent
+        const event = createDeviceEvent({
+          deviceId: activity.deviceId ?? deviceId,
+          deviceName: activity.deviceName ?? deviceName,
+          locationId: activity.locationId ?? locationId,
+          locationName: activity.locationName,
+          time: activity.time ?? new Date().toISOString(),
+          epoch: activity.epoch ?? Date.now(),
+          component: activity.component ?? 'main',
+          componentLabel: activity.componentLabel,
+          capability: (activity.capability ?? 'unknown') as CapabilityName,
+          attribute: activity.attribute ?? 'unknown',
+          value: activity.value,
+          unit: activity.unit,
+          text: activity.text,
+          hash: activity.hash ? String(activity.hash) : undefined,
+          translatedAttributeName: activity.translatedAttributeName,
+          translatedAttributeValue: activity.translatedAttributeValue,
+        });
+
+        rawEvents.push(event);
+      }
+
+      // Check if we hit the limit (indicates more events available)
+      if (activities.length > 0 && rawEvents.length >= limit) {
+        hasMore = true;
+      }
+    } catch (error) {
+      logger.error('Failed to fetch device events', { deviceId, error });
+      throw new Error(`Failed to fetch events for device ${deviceId}: ${error}`);
+    }
+
+    logger.info('Raw events retrieved', {
+      deviceId,
+      count: rawEvents.length,
+      hasMore,
+    });
+
+    // Step 3: Apply client-side filters
+    let filteredEvents = rawEvents;
+
+    // Filter by capabilities
+    if (options.capabilities && options.capabilities.length > 0) {
+      const capabilitySet = new Set(options.capabilities);
+      filteredEvents = filteredEvents.filter((event) => capabilitySet.has(event.capability));
+      logger.debug('Applied capability filter', {
+        before: rawEvents.length,
+        after: filteredEvents.length,
+        capabilities: options.capabilities,
+      });
+    }
+
+    // Filter by attributes
+    if (options.attributes && options.attributes.length > 0) {
+      const attributeSet = new Set(options.attributes);
+      filteredEvents = filteredEvents.filter((event) => attributeSet.has(event.attribute));
+      logger.debug('Applied attribute filter', {
+        before: rawEvents.length,
+        after: filteredEvents.length,
+        attributes: options.attributes,
+      });
+    }
+
+    // Step 4: Detect gaps if metadata requested
+    let gaps: ReturnType<typeof detectEventGaps> | undefined;
+    let gapDetected = false;
+    let largestGapMs: number | undefined;
+
+    if (includeMetadata && filteredEvents.length > 1) {
+      gaps = detectEventGaps(filteredEvents);
+      gapDetected = gaps.length > 0;
+      if (gapDetected) {
+        largestGapMs = Math.max(...gaps.map((g) => g.durationMs));
+        logger.info('Event gaps detected', {
+          gapCount: gaps.length,
+          largestGapMs,
+          gaps: gaps.map((g) => ({
+            start: g.gapStart,
+            end: g.gapEnd,
+            duration: g.durationText,
+          })),
+        });
+      }
+    }
+
+    // Step 5: Build metadata
+    const metadata: DeviceEventResult['metadata'] = {
+      totalCount: filteredEvents.length,
+      hasMore,
+      dateRange: {
+        earliest:
+          filteredEvents.length > 0
+            ? filteredEvents[filteredEvents.length - 1]!.time
+            : new Date().toISOString(),
+        latest: filteredEvents.length > 0 ? filteredEvents[0]!.time : new Date().toISOString(),
+        durationMs:
+          filteredEvents.length > 0
+            ? filteredEvents[0]!.epoch - filteredEvents[filteredEvents.length - 1]!.epoch
+            : 0,
+      },
+      appliedFilters: {
+        capabilities: options.capabilities,
+        attributes: options.attributes,
+        timeRange: adjustedStart
+          ? {
+              start: adjustedStart.toISOString(),
+              end: endTime.toISOString(),
+            }
+          : undefined,
+      },
+      reachedRetentionLimit: !!retentionWarning,
+      gapDetected,
+      largestGapMs,
+    };
+
+    // Step 6: Generate summary for LLM
+    let summary = `Found ${filteredEvents.length} event${filteredEvents.length !== 1 ? 's' : ''}`;
+
+    if (options.capabilities && options.capabilities.length > 0) {
+      summary += ` for ${options.capabilities.join(', ')}`;
+    }
+
+    if (adjustedStart) {
+      const durationText = formatDuration(Date.now() - adjustedStart.getTime());
+      summary += ` in last ${durationText}`;
+    }
+
+    if (hasMore) {
+      summary += ` (limit reached, more events available)`;
+    }
+
+    if (retentionWarning) {
+      summary += `. Warning: ${retentionWarning}`;
+    }
+
+    if (gapDetected && gaps && gaps.length > 0) {
+      summary += `. Detected ${gaps.length} gap${gaps.length !== 1 ? 's' : ''} in event history`;
+      const connectivityIssues = gaps.filter((g) => g.likelyConnectivityIssue);
+      if (connectivityIssues.length > 0) {
+        summary += ` (${connectivityIssues.length} suggest connectivity issues)`;
+      }
+    }
+
+    logger.info('Device events retrieved successfully', {
+      deviceId,
+      totalEvents: filteredEvents.length,
+      hasMore,
+      gapDetected,
+      retentionLimitReached: metadata.reachedRetentionLimit,
+    });
+
+    return {
+      events: filteredEvents,
+      metadata,
+      summary,
+    };
   }
 }
 

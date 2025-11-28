@@ -1,0 +1,265 @@
+{
+  "timestamp": "2025-11-28T06:07:37.245Z",
+  "phase": "Phase 2: Semantic Search Testing",
+  "deviceCount": 184,
+  "metrics": {
+    "loadingTime": 1,
+    "transformationTime": 2,
+    "indexingTime": 0,
+    "averageSearchLatency": 0,
+    "peakSearchLatency": 1,
+    "memoryBaseline": 14.87,
+    "memoryAfterLoading": 29.88,
+    "memoryAfterIndexing": 31.33
+  },
+  "searchResults": [
+    {
+      "query": "lights in the bedroom",
+      "results": 10,
+      "latency": 1,
+      "topMatches": [
+        {
+          "name": "Kitchen Cabinet Lights",
+          "score": 0.5
+        },
+        {
+          "name": "Mud Room Main Lights",
+          "score": 0.5
+        },
+        {
+          "name": "North Deck String Lights",
+          "score": 0.5
+        },
+        {
+          "name": "Auty’s Room Main Lights",
+          "score": 0.5
+        },
+        {
+          "name": "Master Bedroom Thermostat",
+          "score": 0.5
+        }
+      ],
+      "relevanceScore": 100
+    },
+    {
+      "query": "master bedroom alcove light",
+      "results": 10,
+      "latency": 0,
+      "topMatches": [
+        {
+          "name": "Master Down Lights",
+          "score": 0.5
+        },
+        {
+          "name": "Master Alcove Motion Sensor",
+          "score": 0.5
+        },
+        {
+          "name": "Master Closet Overhead Light",
+          "score": 0.5
+        },
+        {
+          "name": "Master Bedroom Thermostat",
+          "score": 0.5
+        },
+        {
+          "name": "Autumn Bedroom closet light",
+          "score": 0.5
+        }
+      ],
+      "relevanceScore": 100
+    },
+    {
+      "query": "motion sensors",
+      "results": 10,
+      "latency": 0,
+      "topMatches": [
+        {
+          "name": "AR Motion Sensor",
+          "score": 0.5
+        },
+        {
+          "name": "Boiler Room Motion Sensor",
+          "score": 0.5
+        },
+        {
+          "name": "SR Motion Sensor",
+          "score": 0.5
+        },
+        {
+          "name": "Guest Room Motion Sensor",
+          "score": 0.5
+        },
+        {
+          "name": "Master Alcove Motion Sensor",
+          "score": 0.5
+        }
+      ],
+      "relevanceScore": 100
+    },
+    {
+      "query": "master alcove motion sensor",
+      "results": 10,
+      "latency": 0,
+      "topMatches": [
+        {
+          "name": "Master Alcove Motion Sensor",
+          "score": 1
+        },
+        {
+          "name": "Master Closet Motion Sensor",
+          "score": 0.75
+        },
+        {
+          "name": "Master Bathroom Motion Sensor",
+          "score": 0.75
+        },
+        {
+          "name": "Master Motion Sensor",
+          "score": 0.75
+        },
+        {
+          "name": "AR Motion Sensor",
+          "score": 0.5
+        }
+      ],
+      "relevanceScore": 100
+    },
+    {
+      "query": "door locks",
+      "results": 10,
+      "latency": 0,
+      "topMatches": [
+        {
+          "name": "Downstairs Door Lock",
+          "score": 0.5
+        },
+        {
+          "name": "Front Door Lights",
+          "score": 0.5
+        },
+        {
+          "name": "Mud Room Outside Door Sensor",
+          "score": 0.5
+        },
+        {
+          "name": "Front Door",
+          "score": 0.5
+        },
+        {
+          "name": "North Terrace Door",
+          "score": 0.5
+        }
+      ],
+      "relevanceScore": 100
+    },
+    {
+      "query": "temperature sensors",
+      "results": 1,
+      "latency": 0,
+      "topMatches": [
+        {
+          "name": "Clean Out Water Sensor",
+          "score": 0.5
+        }
+      ],
+      "relevanceScore": 0
+    },
+    {
+      "query": "devices in master bedroom",
+      "results": 10,
+      "latency": 0,
+      "topMatches": [
+        {
+          "name": "Master Bedroom Thermostat",
+          "score": 0.5
+        },
+        {
+          "name": "Master Down Lights",
+          "score": 0.25
+        },
+        {
+          "name": "Living 2",
+          "score": 0.25
+        },
+        {
+          "name": "Living 6",
+          "score": 0.25
+        },
+        {
+          "name": "Master Wall Washers",
+          "score": 0.25
+        }
+      ],
+      "relevanceScore": 100
+    },
+    {
+      "query": "smart bulbs that support color",
+      "results": 10,
+      "latency": 0,
+      "topMatches": [
+        {
+          "name": "Workout 4",
+          "score": 0.2
+        },
+        {
+          "name": "Living 2",
+          "score": 0.2
+        },
+        {
+          "name": "Globe Light",
+          "score": 0.2
+        },
+        {
+          "name": "Living 6",
+          "score": 0.2
+        },
+        {
+          "name": "Workout 3",
+          "score": 0.2
+        }
+      ],
+      "relevanceScore": 50
+    }
+  ],
+  "averageRelevance": 81,
+  "criteria": [
+    {
+      "name": "All devices indexed",
+      "pass": true,
+      "value": "184/184",
+      "status": "PASS"
+    },
+    {
+      "name": "Indexing time <5s",
+      "pass": true,
+      "value": "0ms",
+      "status": "PASS"
+    },
+    {
+      "name": "Avg search latency <100ms",
+      "pass": true,
+      "value": "0ms",
+      "status": "PASS"
+    },
+    {
+      "name": "Top match accuracy >90%",
+      "pass": false,
+      "value": "81%",
+      "status": "FAIL"
+    },
+    {
+      "name": "Memory overhead <200MB",
+      "pass": true,
+      "value": "16.46 MB",
+      "status": "PASS"
+    },
+    {
+      "name": "All queries returned results",
+      "pass": true,
+      "value": "Yes",
+      "status": "PASS"
+    }
+  ],
+  "overallStatus": "FAIL"
+}

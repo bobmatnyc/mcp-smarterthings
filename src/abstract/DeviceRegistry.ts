@@ -26,7 +26,7 @@ import type {
   Platform,
 } from '../types/unified-device.js';
 import type { DeviceFilter } from '../types/registry.js';
-import { findBestMatch, findAllMatches } from './levenshtein.js';
+import { findAllMatches } from './levenshtein.js';
 import logger from '../utils/logger.js';
 
 /**
@@ -429,15 +429,17 @@ export class DeviceRegistry {
 
     if (matches.length > 0) {
       const bestMatch = matches[0];
-      const deviceId = this.nameIndex.get(bestMatch.match);
-      if (deviceId) {
-        const device = this.devices.get(deviceId);
-        if (device) {
-          return {
-            device,
-            matchType: 'fuzzy',
-            confidence: bestMatch.score,
-          };
+      if (bestMatch) {
+        const deviceId = this.nameIndex.get(bestMatch.match);
+        if (deviceId) {
+          const device = this.devices.get(deviceId);
+          if (device) {
+            return {
+              device,
+              matchType: 'fuzzy',
+              confidence: bestMatch.score,
+            };
+          }
         }
       }
     }

@@ -392,6 +392,7 @@ class ConfigMenu {
           break;
         case '3':
           await this.testConnection();
+          await this.rl.question(chalk.gray('\nPress Enter to continue...'));
           break;
         case '4':
           this.displayStatus();

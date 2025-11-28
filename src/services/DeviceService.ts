@@ -39,6 +39,7 @@
 import type { IDeviceService } from './interfaces.js';
 import type { SmartThingsService } from '../smartthings/client.js';
 import type { DeviceId, DeviceInfo, DeviceStatus, RoomId } from '../types/smartthings.js';
+import type { DeviceEventOptions, DeviceEventResult } from '../types/device-events.js';
 import { ErrorHandler } from './errors/ErrorHandler.js';
 import logger from '../utils/logger.js';
 
@@ -239,6 +240,67 @@ export class DeviceService implements IDeviceService {
       );
 
       ErrorHandler.logError(serviceError, { operation: 'getDeviceCapabilities' });
+      throw serviceError;
+    }
+  }
+
+  /**
+   * Get device event history with filtering and metadata.
+   *
+   * Error Handling:
+   * - Device not found: Transformed to DeviceServiceError with NOT_FOUND code
+   * - Invalid time range: Transformed to DeviceServiceError with INVALID_INPUT code
+   * - Network errors: Transformed with NETWORK_ERROR code
+   * - Empty results: Returns valid DeviceEventResult with empty events array
+   *
+   * @param deviceId Device UUID to query events for
+   * @param options Query options (time range, filters, limits)
+   * @returns Event result with events, metadata, and summary
+   * @throws DeviceServiceError if device not found or time range invalid
+   *
+   * @example
+   * ```typescript
+   * // Get last 24 hours of switch events
+   * const result = await deviceService.getDeviceEvents(
+   *   deviceId,
+   *   {
+   *     startTime: '24h',
+   *     capabilities: ['switch'],
+   *     includeMetadata: true
+   *   }
+   * );
+   *
+   * console.log(result.summary); // "Found 15 switch events in last 24 hours"
+   * if (result.metadata.gapDetected) {
+   *   console.log(`Detected ${result.metadata.gaps.length} gaps in event history`);
+   * }
+   * ```
+   */
+  async getDeviceEvents(
+    deviceId: DeviceId,
+    options: DeviceEventOptions
+  ): Promise<DeviceEventResult> {
+    try {
+      logger.debug('DeviceService.getDeviceEvents', { deviceId, options });
+      const result = await this.smartThingsService.getDeviceEvents(deviceId, options);
+
+      logger.info('Device events retrieved', {
+        deviceId,
+        eventCount: result.events.length,
+        hasMore: result.metadata.hasMore,
+        gapDetected: result.metadata.gapDetected,
+      });
+
+      return result;
+    } catch (error) {
+      const serviceError = ErrorHandler.transformApiError(
+        error as Error,
+        'DeviceService',
+        'getDeviceEvents',
+        { deviceId, options }
+      );
+
+      ErrorHandler.logError(serviceError, { operation: 'getDeviceEvents' });
       throw serviceError;
     }
   }

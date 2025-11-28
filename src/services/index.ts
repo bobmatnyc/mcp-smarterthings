@@ -48,3 +48,31 @@ export {
   type RetryOptions,
   type ParallelOptions,
 } from './CompositionUtils.js';
+
+// Diagnostic and intent classification services
+export {
+  IntentClassifier,
+  DiagnosticIntent,
+  type IntentClassification,
+  type IntentEntities,
+} from './IntentClassifier.js';
+
+export {
+  DiagnosticWorkflow,
+  type DiagnosticContext,
+  type DiagnosticReport,
+  type DeviceHealthData,
+  type IssuePattern,
+  type SystemStatusReport,
+} from './DiagnosticWorkflow.js';
+
+// Semantic search service
+export {
+  SemanticIndex,
+  type DeviceMetadataDocument,
+  type SearchOptions,
+  type DeviceSearchResult,
+  type SyncResult,
+  type IndexStats,
+  createDeviceMetadataDocument,
+} from './SemanticIndex.js';

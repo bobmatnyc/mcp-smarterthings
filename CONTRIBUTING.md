@@ -5,6 +5,8 @@ Thank you for your interest in contributing to mcp-smarterthings! This document 
 ## Table of Contents
 
 - [Getting Started](#getting-started)
+- [File Organization Standards](#file-organization-standards)
+- [AI-Assisted Development](#ai-assisted-development)
 - [Development Workflow](#development-workflow)
 - [Commit Guidelines](#commit-guidelines)
 - [Release Process](#release-process)
@@ -42,6 +44,110 @@ pnpm run verify
 ```
 
 You should now be ready to start development!
+
+## File Organization Standards
+
+**MANDATORY**: This project enforces strict file organization standards. All contributors must follow these conventions.
+
+### Directory Structure
+
+The project uses a standardized directory structure. Files MUST be placed in their designated locations:
+
+#### Documentation Files
+- **ALL documentation** → `/docs/` directory (NOT project root)
+  - Research documentation → `/docs/research/`
+  - API documentation → `/docs/api/`
+  - Integration guides → `/docs/integration/`
+  - Examples → `/docs/examples/`
+  - User guides → `/docs/user/` (if applicable)
+
+#### Test Files
+- **ALL test files** → `/tests/` directory (NOT project root)
+  - Unit tests → `/tests/unit/`
+  - Integration tests → `/tests/integration/`
+  - Test fixtures → `/tests/fixtures/`
+  - Test utilities → `/tests/helpers/`
+
+#### Scripts and Utilities
+- Temporary scripts → `/scripts/`
+- Build scripts → `/scripts/build/`
+- Utility scripts → `/scripts/utils/`
+
+#### Source Code
+- Production code → `/src/`
+- Type definitions → `/src/types/`
+- Services → `/src/services/`
+- MCP tools → `/src/mcp/tools/`
+
+### File Placement Rules
+
+**REQUIRED Standards:**
+
+1. **No documentation in project root** except:
+   - `README.md` (project overview)
+   - `CONTRIBUTING.md` (this file)
+   - `LICENSE` (project license)
+   - `CHANGELOG.md` (auto-generated)
+
+2. **No test files in project root**
+   - All `.test.ts`, `.spec.ts` files go in `/tests/`
+   - Test utilities go in `/tests/helpers/`
+
+3. **No temporary files in project root**
+   - Temporary scripts → `/scripts/temp/` or delete when done
+   - Investigation scripts → `/scripts/investigate/`
+
+4. **Research and design documents**
+   - All research → `/docs/research/`
+   - Design decisions → `/docs/design/` or `/docs/architecture/`
+   - Include date in filename: `feature-name-YYYY-MM-DD.md`
+
+### Linear Ticket Integration
+
+When creating documentation related to specific features or issues:
+
+1. **Attach documentation to Linear tickets** when applicable
+2. **Reference ticket ID** in documentation headers:
+   ```markdown
+   # Feature Name
+
+   **Linear Ticket**: [Ticket Title](https://linear.app/workspace/issue/ID)
+   **Status**: In Progress
+   ```
+
+3. **Update ticket description** with links to generated documentation
+
+### File Naming Conventions
+
+- Use kebab-case for file names: `feature-name.md`, `module-name.ts`
+- Include dates for timestamped docs: `research-topic-2025-11-28.md`
+- Use descriptive names: `api-reference-event-retrieval.md` not `api-ref.md`
+- Prefix executive summaries: `EXECUTIVE-SUMMARY-feature-name.md`
+- Prefix comprehensive reports: `COMPREHENSIVE-feature-report.md`
+
+### Enforcement
+
+These standards are enforced through:
+- Code review requirements
+- CI/CD validation scripts
+- Pre-commit hooks (future enhancement)
+
+**Non-compliance will result in PR rejection.** Please reorganize files before submitting pull requests.
+
+### Questions?
+
+If you're unsure where a file should go, ask in your PR or create an issue. When in doubt, follow the pattern of similar existing files.
+
+## AI-Assisted Development
+
+This project supports AI-assisted development. If you're using Claude Code or similar AI tools:
+
+- Review the `.claude/agents/` directory for agent-specific guidelines
+- Follow the documentation standards when AI generates docs
+- Ensure AI-generated code follows our quality standards
+- Test AI-generated code thoroughly before committing
+
+For detailed AI-assisted development guidelines, see the agent documentation in `.claude/agents/`.
 
 ## Development Workflow
 

@@ -31,6 +31,7 @@ import type {
   SceneId,
   SceneInfo,
 } from '../types/smartthings.js';
+import type { DeviceEventOptions, DeviceEventResult } from '../types/device-events.js';
 
 /**
  * Interface for device-related operations.
@@ -101,6 +102,19 @@ export interface IDeviceService {
    * Time Complexity: O(1) - delegates to getDevice
    */
   getDeviceCapabilities(deviceId: DeviceId): Promise<string[]>;
+
+  /**
+   * Get device event history with filtering and metadata.
+   *
+   * @param deviceId Device UUID to query events for
+   * @param options Query options (time range, filters, limits)
+   * @returns Event result with events, metadata, and summary
+   * @throws Error if device not found or time range invalid
+   *
+   * Time Complexity: O(n) where n = number of events (bounded by limit)
+   * Network Complexity: Single API call with AsyncIterable streaming
+   */
+  getDeviceEvents(deviceId: DeviceId, options: DeviceEventOptions): Promise<DeviceEventResult>;
 }
 
 /**

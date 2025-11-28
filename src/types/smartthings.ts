@@ -170,3 +170,18 @@ export interface SceneInfo {
   lastExecutedDate?: Date;
   editable?: boolean;
 }
+
+/**
+ * Re-export event-related types for convenience.
+ *
+ * Event types are defined in separate module due to complexity.
+ * See: src/types/device-events.ts
+ */
+export type {
+  DeviceEvent,
+  DeviceEventOptions,
+  DeviceEventResult,
+  DeviceEventMetadata,
+  EventGap,
+  EventPattern,
+} from './device-events.js';

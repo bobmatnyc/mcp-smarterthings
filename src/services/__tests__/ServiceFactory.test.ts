@@ -132,6 +132,9 @@ describe('ServiceFactory', () => {
           .fn()
           .mockResolvedValue({ deviceId: 'mock', name: 'Mock Device', capabilities: [] }),
         getDeviceCapabilities: vi.fn().mockResolvedValue([]),
+        getDeviceEvents: vi
+          .fn()
+          .mockResolvedValue({ events: [], metadata: {}, summary: 'No events' }),
       };
 
       const services = ServiceFactory.createServicesWithMocks(mockSmartThingsService, {
@@ -152,6 +155,9 @@ describe('ServiceFactory', () => {
           .fn()
           .mockResolvedValue({ deviceId: 'mock', name: 'Mock Device', capabilities: [] }),
         getDeviceCapabilities: vi.fn().mockResolvedValue([]),
+        getDeviceEvents: vi
+          .fn()
+          .mockResolvedValue({ events: [], metadata: {}, summary: 'No events' }),
       };
 
       const mockLocationService: ILocationService = {

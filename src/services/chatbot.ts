@@ -285,10 +285,12 @@ export class ChatbotService implements IChatbotService {
     const title = this.useColor ? chalk.bold('\nAvailable Commands:\n') : '\nAvailable Commands:\n';
 
     const commands = [
-      '/help     - Show this help message',
-      '/exit     - Exit the chatbot',
-      '/history  - Show message history',
-      '/clear    - Clear message history',
+      '/help          - Show this help message',
+      '/exit          - Exit the chatbot',
+      '/history       - Show message history',
+      '/clear         - Clear message history',
+      '/troubleshoot  - Enter troubleshooting mode',
+      '/normal        - Return to normal mode',
     ];
 
     const commandsText = this.useColor
@@ -308,7 +310,24 @@ export class ChatbotService implements IChatbotService {
       ? examplesList.map((ex) => chalk.gray('  • ' + ex)).join('\n')
       : examplesList.map((ex) => '  • ' + ex).join('\n');
 
-    output.write(title + commandsText + '\n' + examples + examplesText + '\n\n');
+    const troubleshooting = this.useColor
+      ? chalk.bold('\nTroubleshooting Mode:\n')
+      : '\nTroubleshooting Mode:\n';
+
+    const troubleshootingList = [
+      'Auto-activates when you describe an issue',
+      'Uses web search to find solutions',
+      'Analyzes device event history',
+      'Example: "My motion sensor randomly stops working"',
+    ];
+
+    const troubleshootingText = this.useColor
+      ? troubleshootingList.map((ex) => chalk.gray('  • ' + ex)).join('\n')
+      : troubleshootingList.map((ex) => '  • ' + ex).join('\n');
+
+    output.write(
+      title + commandsText + '\n' + examples + examplesText + '\n' + troubleshooting + troubleshootingText + '\n\n'
+    );
   }
 
   /**

@@ -54,11 +54,14 @@ export function levenshteinDistance(str1: string, str2: string): number {
 
     for (let j = 1; j <= len1; j++) {
       const cost = s1[j - 1] === s2[i - 1] ? 0 : 1;
+      const prevValue = previousRow[j];
+      const currentPrevValue = currentRow[j - 1];
+      const diagValue = previousRow[j - 1];
 
       currentRow[j] = Math.min(
-        previousRow[j] + 1, // deletion
-        currentRow[j - 1] + 1, // insertion
-        previousRow[j - 1] + cost // substitution
+        prevValue !== undefined ? prevValue + 1 : Infinity, // deletion
+        currentPrevValue !== undefined ? currentPrevValue + 1 : Infinity, // insertion
+        diagValue !== undefined ? diagValue + cost : Infinity // substitution
       );
     }
 
@@ -66,7 +69,8 @@ export function levenshteinDistance(str1: string, str2: string): number {
     [previousRow, currentRow] = [currentRow, previousRow];
   }
 
-  return previousRow[len1];
+  const result = previousRow[len1];
+  return result !== undefined ? result : 0;
 }
 
 /**

@@ -51,7 +51,7 @@ interface CliArgs {
  * Parse CLI arguments.
  *
  * Supported arguments:
- * --model <model-name>  LLM model to use (default: deepseek/deepseek-chat)
+ * --model <model-name>  LLM model to use (default: anthropic/claude-sonnet-4.5)
  * --debug               Enable debug logging
  * --no-color            Disable colored output
  * --help                Show help message
@@ -104,7 +104,7 @@ ${chalk.bold('Usage:')}
   npm run chat [options]
 
 ${chalk.bold('Options:')}
-  -m, --model <name>    LLM model to use (default: deepseek/deepseek-chat)
+  -m, --model <name>    LLM model to use (default: anthropic/claude-sonnet-4.5)
   -d, --debug           Enable debug logging
   --no-color            Disable colored output
   -h, --help            Show this help message

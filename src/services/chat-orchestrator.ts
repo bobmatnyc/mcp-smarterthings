@@ -29,6 +29,9 @@
 
 import type { IMcpClient, McpToolDefinition } from '../mcp/client.js';
 import type { ILlmService, ChatMessage, LlmToolCall } from './llm.js';
+import type { IntentClassifier } from './IntentClassifier.js';
+import type { DiagnosticWorkflow, DiagnosticReport } from './DiagnosticWorkflow.js';
+import { DiagnosticIntent } from './IntentClassifier.js';
 import logger from '../utils/logger.js';
 import { readFile } from 'fs/promises';
 import { join } from 'path';
@@ -80,6 +83,14 @@ interface HomeContext {
 }
 
 /**
+ * Chat mode types.
+ */
+export enum ChatMode {
+  NORMAL = 'normal',
+  TROUBLESHOOTING = 'troubleshooting',
+}
+
+/**
  * Chat orchestrator configuration.
  */
 export interface ChatOrchestratorConfig {
@@ -93,6 +104,24 @@ export interface ChatOrchestratorConfig {
    * Custom system prompt.
    */
   systemPrompt?: string;
+
+  /**
+   * Initial chat mode.
+   * Default: NORMAL
+   */
+  initialMode?: ChatMode;
+
+  /**
+   * Intent classifier for diagnostic workflows.
+   * Optional - if not provided, auto-detection only uses keywords.
+   */
+  intentClassifier?: IntentClassifier;
+
+  /**
+   * Diagnostic workflow orchestrator.
+   * Optional - if not provided, diagnostic context injection disabled.
+   */
+  diagnosticWorkflow?: DiagnosticWorkflow;
 }
 
 /**
@@ -124,6 +153,20 @@ export interface IChatOrchestrator {
    * Close the orchestrator and cleanup resources.
    */
   close(): Promise<void>;
+
+  /**
+   * Set chat mode.
+   *
+   * @param mode Chat mode to set
+   */
+  setMode(mode: ChatMode): Promise<void>;
+
+  /**
+   * Get current chat mode.
+   *
+   * @returns Current chat mode
+   */
+  getMode(): ChatMode;
 }
 
 /**
@@ -146,6 +189,28 @@ export class ChatOrchestrator implements IChatOrchestrator {
   private availableTools: McpToolDefinition[] = [];
   private maxToolIterations: number;
   private systemPrompt: string;
+  private currentMode: ChatMode;
+  private troubleshootingPrompt: string | null = null;
+  private intentClassifier: IntentClassifier | null = null;
+  private diagnosticWorkflow: DiagnosticWorkflow | null = null;
+
+  /**
+   * Troubleshooting mode detection keywords.
+   */
+  private static readonly TROUBLESHOOTING_KEYWORDS = [
+    'troubleshoot',
+    'diagnose',
+    'debug',
+    'fix',
+    'not working',
+    'randomly',
+    'why is',
+    'help me figure out',
+    'issue with',
+    'problem with',
+    'won\'t',
+    'keeps',
+  ];
 
   /**
    * Create chat orchestrator instance.
@@ -159,9 +224,15 @@ export class ChatOrchestrator implements IChatOrchestrator {
     this.llmService = llmService;
     this.maxToolIterations = config.maxToolIterations ?? 10;
     this.systemPrompt = config.systemPrompt ?? this.getDefaultSystemPrompt();
+    this.currentMode = config.initialMode ?? ChatMode.NORMAL;
+    this.intentClassifier = config.intentClassifier ?? null;
+    this.diagnosticWorkflow = config.diagnosticWorkflow ?? null;
 
     logger.info('Chat orchestrator created', {
       maxToolIterations: this.maxToolIterations,
+      initialMode: this.currentMode,
+      hasIntentClassifier: !!this.intentClassifier,
+      hasDiagnosticWorkflow: !!this.diagnosticWorkflow,
     });
   }
 
@@ -172,8 +243,9 @@ export class ChatOrchestrator implements IChatOrchestrator {
    * 1. Initialize MCP client
    * 2. Fetch available tools
    * 3. Load system instructions
-   * 4. Generate session context
-   * 5. Combine instructions and add to conversation
+   * 4. Load troubleshooting prompts
+   * 5. Generate session context
+   * 6. Combine instructions and add to conversation
    */
   async initialize(): Promise<void> {
     logger.info('Initializing chat orchestrator');
@@ -190,6 +262,9 @@ export class ChatOrchestrator implements IChatOrchestrator {
         tools: this.availableTools.map((t) => t.name),
       });
 
+      // Load troubleshooting prompts
+      await this.loadTroubleshootingPrompts();
+
       // Load and build layered instructions
       const layeredInstructions = await this.buildLayeredInstructions();
 
@@ -201,7 +276,9 @@ export class ChatOrchestrator implements IChatOrchestrator {
         },
       ];
 
-      logger.info('Chat orchestrator initialized successfully with layered instructions');
+      logger.info('Chat orchestrator initialized successfully with layered instructions', {
+        mode: this.currentMode,
+      });
     } catch (error) {
       logger.error('Failed to initialize chat orchestrator', {
         error: error instanceof Error ? error.message : String(error),
@@ -225,7 +302,76 @@ export class ChatOrchestrator implements IChatOrchestrator {
    * - Max iterations → Return partial response with warning
    */
   async processMessage(message: string): Promise<string> {
-    logger.info('Processing user message', { message });
+    logger.info('Processing user message', { message, mode: this.currentMode });
+
+    // Step 1: Classify intent (if classifier available)
+    let diagnosticReport: DiagnosticReport | null = null;
+    if (this.intentClassifier && this.diagnosticWorkflow) {
+      try {
+        const classification = await this.intentClassifier.classifyIntent(
+          message,
+          this.getConversationContext()
+        );
+
+        logger.debug('Intent classified', {
+          intent: classification.intent,
+          confidence: classification.confidence,
+          requiresDiagnostics: classification.requiresDiagnostics,
+        });
+
+        // Handle mode management intents
+        if (classification.intent === DiagnosticIntent.MODE_MANAGEMENT) {
+          const modeCommand = this.handleModeCommand(message);
+          if (modeCommand) {
+            return modeCommand;
+          }
+        }
+
+        // Auto-switch to troubleshooting mode for diagnostic intents
+        if (
+          this.currentMode === ChatMode.NORMAL &&
+          (classification.intent === DiagnosticIntent.DEVICE_HEALTH ||
+            classification.intent === DiagnosticIntent.ISSUE_DIAGNOSIS ||
+            classification.intent === DiagnosticIntent.SYSTEM_STATUS) &&
+          classification.confidence > 0.8
+        ) {
+          logger.info('Auto-switching to troubleshooting mode based on intent', {
+            intent: classification.intent,
+            confidence: classification.confidence,
+          });
+          await this.setMode(ChatMode.TROUBLESHOOTING);
+        }
+
+        // Execute diagnostic workflow if needed
+        if (classification.requiresDiagnostics) {
+          diagnosticReport = await this.diagnosticWorkflow.executeDiagnosticWorkflow(
+            classification,
+            message
+          );
+
+          logger.info('Diagnostic workflow completed', {
+            intent: classification.intent,
+            dataPoints: diagnosticReport.diagnosticContext,
+            recommendations: diagnosticReport.recommendations.length,
+          });
+        }
+      } catch (error) {
+        logger.warn('Intent classification or diagnostic workflow failed, continuing without', {
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+    } else {
+      // Fallback to keyword-based detection if no classifier
+      const modeCommand = this.handleModeCommand(message);
+      if (modeCommand) {
+        return modeCommand;
+      }
+
+      if (this.currentMode === ChatMode.NORMAL && this.detectTroubleshootingIntent(message)) {
+        logger.info('Auto-detected troubleshooting intent, switching to troubleshooting mode');
+        await this.setMode(ChatMode.TROUBLESHOOTING);
+      }
+    }
 
     // Add user message to history
     this.conversationHistory.push({
@@ -242,10 +388,33 @@ export class ChatOrchestrator implements IChatOrchestrator {
       logger.debug('LLM iteration', { iteration: iterations });
 
       try {
-        // Get LLM response
+        // Determine if web search should be enabled
+        const enableWebSearch = this.currentMode === ChatMode.TROUBLESHOOTING;
+
+        // Configure web search for troubleshooting mode
+        const webSearchConfig = enableWebSearch
+          ? {
+              maxResults: 3,
+              searchPrompt:
+                'Focus on SmartThings smart home device issues, automation problems, and recent troubleshooting solutions',
+              engine: 'native' as const,
+              contextSize: 'medium' as const,
+            }
+          : undefined;
+
+        // Inject diagnostic context if available
+        const messagesWithContext = diagnosticReport
+          ? this.injectDiagnosticContext(this.conversationHistory, diagnosticReport)
+          : this.conversationHistory;
+
+        // Get LLM response with optional web search
         const llmResponse = await this.llmService.chat(
-          this.conversationHistory,
-          this.availableTools
+          messagesWithContext,
+          this.availableTools,
+          {
+            enableWebSearch,
+            searchConfig: webSearchConfig,
+          }
         );
 
         // Add assistant response to history (even if it has tool calls)
@@ -341,6 +510,45 @@ export class ChatOrchestrator implements IChatOrchestrator {
   }
 
   /**
+   * Set chat mode.
+   *
+   * Switches between normal and troubleshooting modes.
+   * Rebuilds system prompt with mode-specific instructions.
+   *
+   * @param mode Chat mode to set
+   */
+  async setMode(mode: ChatMode): Promise<void> {
+    logger.info('Switching chat mode', { from: this.currentMode, to: mode });
+
+    this.currentMode = mode;
+
+    // Rebuild layered instructions with new mode
+    const layeredInstructions = await this.buildLayeredInstructions();
+
+    // Update system prompt in conversation history
+    if (this.conversationHistory.length > 0 && this.conversationHistory[0]?.role === 'system') {
+      this.conversationHistory[0].content = layeredInstructions;
+    } else {
+      // If no system message, add one
+      this.conversationHistory.unshift({
+        role: 'system',
+        content: layeredInstructions,
+      });
+    }
+
+    logger.info('Chat mode switched successfully', { mode: this.currentMode });
+  }
+
+  /**
+   * Get current chat mode.
+   *
+   * @returns Current chat mode
+   */
+  getMode(): ChatMode {
+    return this.currentMode;
+  }
+
+  /**
    * Execute tool calls and add results to conversation.
    *
    * Complexity: O(n) where n = number of tool calls
@@ -425,11 +633,139 @@ export class ChatOrchestrator implements IChatOrchestrator {
   }
 
   /**
+   * Detect troubleshooting intent in user message.
+   *
+   * @param message User message
+   * @returns True if troubleshooting intent detected
+   */
+  private detectTroubleshootingIntent(message: string): boolean {
+    const lowerMessage = message.toLowerCase();
+
+    return ChatOrchestrator.TROUBLESHOOTING_KEYWORDS.some((keyword) =>
+      lowerMessage.includes(keyword)
+    );
+  }
+
+  /**
+   * Handle mode toggle commands.
+   *
+   * @param message User message
+   * @returns Mode switch confirmation or null if not a command
+   */
+  private handleModeCommand(message: string): string | null {
+    const trimmed = message.trim().toLowerCase();
+
+    if (trimmed === '/troubleshoot') {
+      if (this.currentMode === ChatMode.TROUBLESHOOTING) {
+        return '🔧 Already in troubleshooting mode.';
+      }
+
+      void this.setMode(ChatMode.TROUBLESHOOTING);
+      return '🔧 Switched to troubleshooting mode. I\'ll help diagnose issues systematically using event history and web search.';
+    }
+
+    if (trimmed === '/normal') {
+      if (this.currentMode === ChatMode.NORMAL) {
+        return '💬 Already in normal mode.';
+      }
+
+      void this.setMode(ChatMode.NORMAL);
+      return '💬 Switched to normal mode.';
+    }
+
+    return null;
+  }
+
+  /**
+   * Load troubleshooting prompts from file.
+   *
+   * Loads and caches troubleshooting prompts for later use.
+   * Non-critical - continues with fallback if loading fails.
+   */
+  private async loadTroubleshootingPrompts(): Promise<void> {
+    try {
+      const docsDir = join(process.cwd(), 'docs');
+      const troubleshootingPromptsPath = join(docsDir, 'troubleshooting-system-prompts.md');
+
+      logger.debug('Loading troubleshooting prompts', {
+        path: troubleshootingPromptsPath,
+      });
+
+      const content = await readFile(troubleshootingPromptsPath, 'utf-8');
+
+      // Extract the core prompts sections (not the documentation parts)
+      this.troubleshootingPrompt = this.extractTroubleshootingPrompts(content);
+
+      logger.info('Troubleshooting prompts loaded successfully', {
+        length: this.troubleshootingPrompt.length,
+      });
+    } catch (error) {
+      logger.warn('Failed to load troubleshooting prompts, will use inline fallback', {
+        error: error instanceof Error ? error.message : String(error),
+      });
+
+      this.troubleshootingPrompt = this.getFallbackTroubleshootingPrompt();
+    }
+  }
+
+  /**
+   * Extract troubleshooting prompts from documentation.
+   *
+   * Extracts only the prompt sections, not the documentation/metadata.
+   *
+   * @param content Full documentation content
+   * @returns Extracted prompt text
+   */
+  private extractTroubleshootingPrompts(content: string): string {
+    // Extract sections between code blocks
+    const sections: string[] = [];
+
+    // Match all code blocks
+    const codeBlockRegex = /```[\s\S]*?```/g;
+    const codeBlocks = content.match(codeBlockRegex);
+
+    if (codeBlocks) {
+      for (const block of codeBlocks) {
+        // Remove the ``` markers
+        const cleaned = block.replace(/```[a-z]*\n?/g, '').replace(/```$/g, '').trim();
+        sections.push(cleaned);
+      }
+    }
+
+    return sections.join('\n\n---\n\n');
+  }
+
+  /**
+   * Get fallback troubleshooting prompt.
+   *
+   * Provides inline fallback if external prompts can't be loaded.
+   *
+   * @returns Fallback troubleshooting prompt
+   */
+  private getFallbackTroubleshootingPrompt(): string {
+    return `You are an expert SmartThings smart home troubleshooting assistant.
+
+When diagnosing issues, follow this structured approach:
+
+1. **GATHER CONTEXT** - Ask clarifying questions about the issue
+2. **COLLECT DATA** - Retrieve device event history using get_device_events
+3. **ANALYZE PATTERNS** - Look for event gaps, timing anomalies, correlations
+4. **RESEARCH SOLUTIONS** - Use web search for known issues and solutions
+5. **DIAGNOSE ROOT CAUSE** - Form hypothesis based on data and research
+6. **PROPOSE SOLUTIONS** - Recommend specific fixes ordered by likelihood
+7. **IMPLEMENT FIXES** - Execute changes with user approval
+8. **VERIFY RESOLUTION** - Monitor and confirm issue is resolved
+
+Always cite web search sources and provide confidence levels for diagnoses.`;
+  }
+
+  /**
    * Build layered instructions by combining system and session instructions.
    *
    * Architecture:
    * - System Instructions: Static identity, tone, behavior guidelines
    * - Session Instructions: Dynamic device/room/scene context
+   * - Troubleshooting Prompts: When in troubleshooting mode
    *
    * @returns Combined instruction text
    */
@@ -441,14 +777,29 @@ export class ChatOrchestrator implements IChatOrchestrator {
       // Generate session context (dynamic device data)
       const sessionContext = await this.generateSessionContext();
 
-      // Combine both layers
-      const combined = `${systemInstructions}\n\n---\n\n${sessionContext}`;
+      // Build combined instructions based on mode
+      let combined: string;
 
-      logger.debug('Layered instructions built', {
-        systemLength: systemInstructions.length,
-        sessionLength: sessionContext.length,
-        totalLength: combined.length,
-      });
+      if (this.currentMode === ChatMode.TROUBLESHOOTING && this.troubleshootingPrompt) {
+        // Troubleshooting mode: Add troubleshooting prompts
+        combined = `${systemInstructions}\n\n---\n\n# TROUBLESHOOTING MODE ACTIVE\n\n${this.troubleshootingPrompt}\n\n---\n\n${sessionContext}`;
+
+        logger.debug('Layered instructions built (troubleshooting mode)', {
+          systemLength: systemInstructions.length,
+          troubleshootingLength: this.troubleshootingPrompt.length,
+          sessionLength: sessionContext.length,
+          totalLength: combined.length,
+        });
+      } else {
+        // Normal mode: Standard instructions
+        combined = `${systemInstructions}\n\n---\n\n${sessionContext}`;
+
+        logger.debug('Layered instructions built (normal mode)', {
+          systemLength: systemInstructions.length,
+          sessionLength: sessionContext.length,
+          totalLength: combined.length,
+        });
+      }
 
       return combined;
     } catch (error) {
@@ -711,5 +1062,99 @@ Be conversational and helpful. Provide clear feedback on actions taken.
 If an operation fails, explain what went wrong and suggest alternatives.
 
 Available tools will be provided as function calls. Use them to fulfill user requests.`;
+  }
+
+  /**
+   * Get conversation context for intent classification.
+   *
+   * Returns last 3 messages for context window.
+   *
+   * @returns Array of recent message contents
+   */
+  private getConversationContext(): string[] {
+    return this.conversationHistory
+      .slice(-3)
+      .filter((msg) => msg.role === 'user' || msg.role === 'assistant')
+      .map((msg) => `${msg.role}: ${msg.content || ''}`);
+  }
+
+  /**
+   * Inject diagnostic context into conversation history.
+   *
+   * Design Decision: Insert before user message as system context
+   * Rationale: System messages provide LLM with additional context without
+   * appearing as user conversation. LLM treats this as privileged information.
+   *
+   * @param messages Original conversation history
+   * @param report Diagnostic report to inject
+   * @returns Messages with injected diagnostic context
+   */
+  private injectDiagnosticContext(
+    messages: ChatMessage[],
+    report: DiagnosticReport
+  ): ChatMessage[] {
+    // Find system message index (should be first)
+    const systemMsgIndex = messages.findIndex((msg) => msg.role === 'system');
+
+    if (systemMsgIndex === -1) {
+      // No system message, shouldn't happen but handle gracefully
+      logger.warn('No system message found for diagnostic context injection');
+      return messages;
+    }
+
+    // Build enhanced system prompt with diagnostic context
+    const systemMsg = messages[systemMsgIndex];
+    if (!systemMsg) {
+      logger.warn('System message index is invalid');
+      return messages;
+    }
+
+    const enhancedSystemPrompt = this.buildEnhancedSystemPrompt(
+      systemMsg.content?.toString() || '',
+      report
+    );
+
+    // Clone messages array and update system message
+    const messagesWithContext = [...messages];
+    messagesWithContext[systemMsgIndex] = {
+      role: 'system',
+      content: enhancedSystemPrompt,
+    };
+
+    logger.debug('Diagnostic context injected into system prompt', {
+      originalLength: systemMsg.content?.toString().length || 0,
+      enhancedLength: enhancedSystemPrompt.length,
+    });
+
+    return messagesWithContext;
+  }
+
+  /**
+   * Build enhanced system prompt with diagnostic context.
+   *
+   * @param basePrompt Base system prompt
+   * @param report Diagnostic report
+   * @returns Enhanced system prompt
+   */
+  private buildEnhancedSystemPrompt(basePrompt: string, report: DiagnosticReport): string {
+    const sections: string[] = [basePrompt];
+
+    // Add diagnostic context section
+    sections.push('\n---\n');
+    sections.push('## DIAGNOSTIC CONTEXT (Auto-Gathered)\n');
+    sections.push(`I've automatically gathered the following diagnostic information:\n`);
+    sections.push(report.richContext);
+
+    // Add recommendations if present
+    if (report.recommendations.length > 0) {
+      sections.push('\n## RECOMMENDATIONS\n');
+      report.recommendations.forEach((rec) => {
+        sections.push(`- ${rec}`);
+      });
+    }
+
+    sections.push('\n---\n');
+
+    return sections.join('\n');
   }
 }
