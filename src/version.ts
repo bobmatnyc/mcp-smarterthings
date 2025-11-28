@@ -4,7 +4,7 @@
  */
 
 // Version is synchronized with package.json during release
-export const VERSION = '0.7.0';
+export const VERSION = '0.7.1';
 
 // Build metadata (updated by build scripts)
 export const BUILD_INFO = {
