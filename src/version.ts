@@ -4,14 +4,14 @@
  */
 
 // Version is synchronized with package.json during release
-export const VERSION = '0.7.1';
+export const VERSION = '0.7.2';
 
 // Build metadata (updated by build scripts)
 export const BUILD_INFO = {
   version: VERSION,
-  buildDate: '2025-11-28T22:59:31Z',
-  gitCommit: '095a7b711ba128afef69e34a94632835f48f05b5',
-  gitBranch: 'main',
+  buildDate: new Date().toISOString(),
+  gitCommit: process.env.GIT_COMMIT || 'unknown',
+  gitBranch: process.env.GIT_BRANCH || 'unknown',
 } as const;
 
 /**
