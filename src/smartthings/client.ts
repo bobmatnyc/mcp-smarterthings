@@ -27,6 +27,7 @@ import {
   createDeviceEvent,
   formatDuration,
 } from '../types/device-events.js';
+import { parseUniversalDeviceId, isUniversalDeviceId } from '../types/unified-device.js';
 
 /**
  * SmartThings API client wrapper with retry logic and error handling.
@@ -117,15 +118,20 @@ export class SmartThingsService implements ISmartThingsService {
   /**
    * Get detailed status of a specific device.
    *
-   * @param deviceId Device UUID
+   * @param deviceId Device UUID or universal device ID
    * @returns Device status with capability states
    * @throws Error if device not found or API request fails
    */
   async getDeviceStatus(deviceId: DeviceId): Promise<DeviceStatus> {
     logger.debug('Fetching device status', { deviceId });
 
+    // Extract platform-specific ID if universal ID provided
+    const platformDeviceId = isUniversalDeviceId(deviceId)
+      ? parseUniversalDeviceId(deviceId).platformDeviceId
+      : deviceId;
+
     const status = await retryWithBackoff(async () => {
-      return await this.client.devices.getStatus(deviceId);
+      return await this.client.devices.getStatus(platformDeviceId);
     });
 
     logger.info('Device status retrieved', { deviceId });
@@ -135,7 +141,7 @@ export class SmartThingsService implements ISmartThingsService {
   /**
    * Execute a command on a device.
    *
-   * @param deviceId Device UUID
+   * @param deviceId Device UUID or universal device ID
    * @param capability Capability name (e.g., "switch")
    * @param command Command name (e.g., "on", "off")
    * @param args Optional command arguments
@@ -148,6 +154,11 @@ export class SmartThingsService implements ISmartThingsService {
     args?: unknown[]
   ): Promise<void> {
     logger.debug('Executing device command', { deviceId, capability, command, args });
+
+    // Extract platform-specific ID if universal ID provided
+    const platformDeviceId = isUniversalDeviceId(deviceId)
+      ? parseUniversalDeviceId(deviceId).platformDeviceId
+      : deviceId;
 
     const startTime = Date.now();
     let deviceName: string | undefined;
@@ -164,7 +175,7 @@ export class SmartThingsService implements ISmartThingsService {
 
       // Execute command with retry logic
       await retryWithBackoff(async () => {
-        await this.client.devices.executeCommand(deviceId, {
+        await this.client.devices.executeCommand(platformDeviceId, {
           capability,
           command,
           arguments: args as (string | number | object)[] | undefined,
@@ -215,15 +226,20 @@ export class SmartThingsService implements ISmartThingsService {
   /**
    * Get detailed information about a specific device.
    *
-   * @param deviceId Device UUID
+   * @param deviceId Device UUID or universal device ID
    * @returns Device information
    * @throws Error if device not found
    */
   async getDevice(deviceId: DeviceId): Promise<DeviceInfo> {
     logger.debug('Fetching device details', { deviceId });
 
+    // Extract platform-specific ID if universal ID provided
+    const platformDeviceId = isUniversalDeviceId(deviceId)
+      ? parseUniversalDeviceId(deviceId).platformDeviceId
+      : deviceId;
+
     const device = await retryWithBackoff(async () => {
-      return await this.client.devices.get(deviceId);
+      return await this.client.devices.get(platformDeviceId);
     });
 
     const deviceInfo: DeviceInfo = {
@@ -244,13 +260,14 @@ export class SmartThingsService implements ISmartThingsService {
   /**
    * Get capabilities of a specific device.
    *
-   * @param deviceId Device UUID
+   * @param deviceId Device UUID or universal device ID
    * @returns Array of capability names
    * @throws Error if device not found
    */
   async getDeviceCapabilities(deviceId: DeviceId): Promise<string[]> {
     logger.debug('Fetching device capabilities', { deviceId });
 
+    // Note: getDevice already handles universal ID extraction
     const device = await this.getDevice(deviceId);
     const capabilities = device.capabilities ?? [];
 
@@ -521,6 +538,11 @@ export class SmartThingsService implements ISmartThingsService {
   ): Promise<DeviceEventResult> {
     logger.debug('Fetching device events', { deviceId, options });
 
+    // Extract platform-specific ID if universal ID provided
+    const platformDeviceId = isUniversalDeviceId(deviceId)
+      ? parseUniversalDeviceId(deviceId).platformDeviceId
+      : deviceId;
+
     // Step 1: Validate and prepare options
     const startTime = options.startTime ? parseTimeRange(options.startTime) : undefined;
     const endTime = options.endTime ? parseTimeRange(options.endTime) : new Date();
@@ -573,7 +595,7 @@ export class SmartThingsService implements ISmartThingsService {
     try {
       const result = await retryWithBackoff(async () => {
         const historyOptions = {
-          deviceId,
+          deviceId: platformDeviceId, // Use extracted platform-specific ID
           locationId,
           startTime: adjustedStart,
           endTime: endTime,
