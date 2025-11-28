@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+## [0.7.0] - 2025-11-28
+
+### Added
+- **Pattern Detection in Diagnostic Framework** ([#1M-307](https://linear.app/1m-hyperdev/issue/1M-307))
+  - Implemented 4 pattern detection algorithms: rapid changes, automation triggers, connectivity gaps, normal patterns
+  - Achieved 95%+ confidence on real-world automation detection (validated with Alcove Bar case)
+  - Performance: <100ms for 100 events, <500ms end-to-end diagnostic workflow
+  - 12/12 comprehensive test coverage with real-world validation
+  - Enhanced recommendation generation with confidence-based specificity
+  - Pattern types:
+    - `rapid_changes`: Automation triggers (<5s gaps, 95% confidence) and rapid changes (5-10s gaps, 85% confidence)
+    - `connectivity_gap`: Network/hub connectivity issues (>1h gaps, 80% confidence)
+    - `normal`: No issues detected (95% confidence baseline)
+  - Advanced features:
+    - Odd-hour activity detection (1-5 AM) increases automation confidence to 98%
+    - Motion sensor automation detection and recommendations
+    - Automation loop detection (multiple rapid changes alert)
+    - Graceful degradation on API errors or insufficient data
+  - Comprehensive documentation:
+    - Diagnostic Framework Overview (architecture, components, workflow)
+    - Pattern Detection API Reference (algorithms, data types, examples)
+    - Integration Guide (chatbot, CLI, MCP tools)
+    - Troubleshooting Patterns Guide (user-facing, step-by-step fixes)
+    - Quick Reference Card (one-page cheat sheet)
+
 ## [0.6.1] - 2025-11-26
 
 ### Added
