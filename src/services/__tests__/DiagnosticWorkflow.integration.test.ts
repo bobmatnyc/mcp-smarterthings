@@ -17,12 +17,13 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { config as loadEnv } from 'dotenv';
 import { DiagnosticWorkflow } from '../DiagnosticWorkflow.js';
-import { IntentClassifier } from '../IntentClassifier.js';
+import { IntentClassifier, DiagnosticIntent } from '../IntentClassifier.js';
 import { DeviceRegistry } from '../../abstract/DeviceRegistry.js';
-import { SemanticIndex } from '../SemanticIndex.js';
+import { SemanticIndex, createDeviceMetadataDocument } from '../SemanticIndex.js';
 import { DeviceService } from '../DeviceService.js';
 import { SmartThingsService } from '../../smartthings/client.js';
 import { LlmService } from '../llm.js';
+import { toUnifiedDevice } from '../transformers/index.js';
 import type { IntentClassification } from '../IntentClassifier.js';
 
 // Load environment variables
@@ -46,14 +47,14 @@ describe('DiagnosticWorkflow Integration Tests', () => {
 
   beforeAll(async () => {
     // Check for required environment variables
-    const pat = process.env.SMARTTHINGS_PAT;
+    const pat = process.env['SMARTTHINGS_PAT'];
     if (!pat) {
       throw new Error(
         'SMARTTHINGS_PAT environment variable required for integration tests'
       );
     }
 
-    const openrouterApiKey = process.env.OPENROUTER_API_KEY;
+    const openrouterApiKey = process.env['OPENROUTER_API_KEY'];
     if (!openrouterApiKey) {
       throw new Error(
         'OPENROUTER_API_KEY environment variable required for integration tests'
@@ -61,10 +62,10 @@ describe('DiagnosticWorkflow Integration Tests', () => {
     }
 
     // Initialize services
-    const smartThingsService = new SmartThingsService(pat);
+    // SmartThingsService reads from environment variables (already set via loadEnv())
+    const smartThingsService = new SmartThingsService();
     const llmService = new LlmService({
       apiKey: openrouterApiKey,
-      model: 'anthropic/claude-sonnet-4.5',
       maxRetries: 3,
     });
 
@@ -82,28 +83,15 @@ describe('DiagnosticWorkflow Integration Tests', () => {
     const devices = await deviceService.listDevices();
     console.log(`Loaded ${devices.length} devices`);
 
-    // Populate registry
+    // Populate registry and semantic index
     for (const device of devices) {
-      deviceRegistry.addDevice(device);
+      const unified = toUnifiedDevice(device);
+      deviceRegistry.addDevice(unified);
+      // Index each device individually
+      const metadataDoc = createDeviceMetadataDocument(unified);
+      await semanticIndex.indexDevice(metadataDoc);
     }
-
-    // Populate semantic index
-    const deviceInfos = devices.map((d) => ({
-      deviceId: d.id,
-      content: `${d.label || d.name} ${d.room || ''} ${Array.from(d.capabilities).join(' ')}`,
-      metadata: {
-        name: d.name,
-        label: d.label || d.name,
-        room: d.room,
-        capabilities: Array.from(d.capabilities),
-        platform: d.platform,
-        online: d.online,
-        tags: d.tags || [],
-      },
-    }));
-
-    await semanticIndex.indexDeviceInfoBatch(deviceInfos);
-    console.log(`Indexed ${deviceInfos.length} devices`);
+    console.log(`Indexed ${devices.length} devices`);
 
     // Initialize workflow
     workflow = new DiagnosticWorkflow(
@@ -360,17 +348,17 @@ describe('DiagnosticWorkflow Integration Tests', () => {
       // 1. Intent classification
       let start = Date.now();
       const classification = await intentClassifier.classifyIntent(query);
-      timings.intentClassification = Date.now() - start;
-      console.log(`Intent classification: ${timings.intentClassification}ms`);
+      timings['intentClassification'] = Date.now() - start;
+      console.log(`Intent classification: ${timings['intentClassification']}ms`);
 
       // 2. Device resolution (semantic search)
       start = Date.now();
-      const searchResults = await semanticIndex.searchDevices(
+      await semanticIndex.searchDevices(
         classification.entities.deviceName || 'master alcove motion sensor',
         { limit: 1, minSimilarity: 0.7 }
       );
-      timings.deviceResolution = Date.now() - start;
-      console.log(`Device resolution: ${timings.deviceResolution}ms`);
+      timings['deviceResolution'] = Date.now() - start;
+      console.log(`Device resolution: ${timings['deviceResolution']}ms`);
 
       // 3. Workflow execution
       start = Date.now();
@@ -378,8 +366,8 @@ describe('DiagnosticWorkflow Integration Tests', () => {
         classification,
         query
       );
-      timings.workflowExecution = Date.now() - start;
-      console.log(`Workflow execution: ${timings.workflowExecution}ms`);
+      timings['workflowExecution'] = Date.now() - start;
+      console.log(`Workflow execution: ${timings['workflowExecution']}ms`);
 
       // Total
       const total = Object.values(timings).reduce((sum, t) => sum + t, 0);
@@ -388,13 +376,13 @@ describe('DiagnosticWorkflow Integration Tests', () => {
       // Performance targets
       console.log('\nPerformance vs Targets:');
       console.log(
-        `  Intent classification: ${timings.intentClassification}ms (target: <200ms) ${timings.intentClassification < 200 ? '✅' : '⚠️'}`
+        `  Intent classification: ${timings['intentClassification']}ms (target: <200ms) ${timings['intentClassification'] < 200 ? '✅' : '⚠️'}`
       );
       console.log(
-        `  Device resolution: ${timings.deviceResolution}ms (target: <100ms) ${timings.deviceResolution < 100 ? '✅' : '⚠️'}`
+        `  Device resolution: ${timings['deviceResolution']}ms (target: <100ms) ${timings['deviceResolution'] < 100 ? '✅' : '⚠️'}`
       );
       console.log(
-        `  Workflow execution: ${timings.workflowExecution}ms (target: <400ms) ${timings.workflowExecution < 400 ? '✅' : '⚠️'}`
+        `  Workflow execution: ${timings['workflowExecution']}ms (target: <400ms) ${timings['workflowExecution'] < 400 ? '✅' : '⚠️'}`
       );
       console.log(
         `  Total: ${total}ms (target: <500ms) ${total < 500 ? '✅' : '⚠️'}`
@@ -420,7 +408,7 @@ describe('DiagnosticWorkflow Integration Tests', () => {
       const query = 'check nonexistent device xyz123';
 
       const classification: IntentClassification = {
-        intent: 'device_health',
+        intent: DiagnosticIntent.DEVICE_HEALTH,
         confidence: 0.9,
         entities: { deviceName: 'nonexistent device xyz123' },
         requiresDiagnostics: true,

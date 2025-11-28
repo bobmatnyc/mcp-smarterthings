@@ -39,7 +39,11 @@
 import type { IDeviceService } from './interfaces.js';
 import type { SmartThingsService } from '../smartthings/client.js';
 import type { DeviceId, DeviceInfo, DeviceStatus, RoomId } from '../types/smartthings.js';
-import type { DeviceEventOptions, DeviceEventResult } from '../types/device-events.js';
+import type {
+  DeviceEventOptions,
+  DeviceEventServiceOptions,
+  DeviceEventResult,
+} from '../types/device-events.js';
 import { ErrorHandler } from './errors/ErrorHandler.js';
 import logger from '../utils/logger.js';
 
@@ -278,11 +282,13 @@ export class DeviceService implements IDeviceService {
    */
   async getDeviceEvents(
     deviceId: DeviceId,
-    options: DeviceEventOptions
+    options: DeviceEventServiceOptions = {}
   ): Promise<DeviceEventResult> {
     try {
       logger.debug('DeviceService.getDeviceEvents', { deviceId, options });
-      const result = await this.smartThingsService.getDeviceEvents(deviceId, options);
+      // Merge deviceId into options for SmartThingsService
+      const fullOptions: DeviceEventOptions = { ...options, deviceId };
+      const result = await this.smartThingsService.getDeviceEvents(deviceId, fullOptions);
 
       logger.info('Device events retrieved', {
         deviceId,

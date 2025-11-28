@@ -15,7 +15,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { SemanticIndexAdapter } from '../SemanticIndexAdapter.js';
 import { createDeviceId } from '../../../types/smartthings.js';
-import { DeviceCapability, Platform } from '../../../types/unified-device.js';
+import { Platform } from '../../../types/unified-device.js';
 import type { DeviceInfo, DeviceStatus } from '../../../types/smartthings.js';
 import type { SemanticIndex, DeviceMetadataDocument } from '../../SemanticIndex.js';
 
@@ -316,7 +316,7 @@ describe('SemanticIndexAdapter', () => {
       expect(result.indexed).toBe(0);
       expect(result.failed).toBe(2);
       expect(result.errors).toHaveLength(1);
-      expect(result.errors[0].deviceId).toBe('BATCH');
+      expect(result.errors[0]?.deviceId).toBe('BATCH');
     });
 
     it('batch operation performance: <100ms for 50 devices (transformation only)', async () => {

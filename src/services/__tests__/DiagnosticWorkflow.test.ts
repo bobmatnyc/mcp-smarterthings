@@ -50,7 +50,7 @@ const createMockDevice = (id: string, name: string): UnifiedDevice =>
     capabilities: ['switch'],
     online: true,
     room: 'Living Room',
-  }) as UnifiedDevice;
+  }) as unknown as UnifiedDevice;
 
 describe('DiagnosticWorkflow', () => {
   let workflow: DiagnosticWorkflow;
@@ -229,7 +229,7 @@ describe('DiagnosticWorkflow', () => {
         createMockDevice('dev-1', 'Device 1'),
         createMockDevice('dev-2', 'Device 2'),
       ];
-      mockDevices[1].online = false; // One offline device
+      mockDevices[1]!.online = false; // One offline device
 
       vi.mocked(mockDeviceRegistry.getAllDevices).mockReturnValue(mockDevices);
 

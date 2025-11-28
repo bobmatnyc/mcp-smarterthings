@@ -13,7 +13,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { promises as fs } from 'fs';
 import { DeviceRegistry } from '../DeviceRegistry.js';
-import type { UnifiedDevice, UniversalDeviceId, DeviceCapability, Platform } from '../../types/unified-device.js';
+import type { UnifiedDevice } from '../../types/unified-device.js';
 import { createUniversalDeviceId } from '../../types/unified-device.js';
 import { DeviceCapability as CapabilityEnum } from '../../types/unified-device.js';
 import { Platform as PlatformEnum } from '../../types/unified-device.js';

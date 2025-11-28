@@ -146,6 +146,14 @@ export interface DeviceEventOptions {
 }
 
 /**
+ * Options for service-level event queries (deviceId passed separately).
+ *
+ * This type is used by DeviceService.getDeviceEvents() which takes deviceId
+ * as a separate parameter to avoid redundancy.
+ */
+export type DeviceEventServiceOptions = Omit<DeviceEventOptions, 'deviceId'>;
+
+/**
  * Metadata about event query results.
  *
  * Design Decision: Rich metadata for LLM troubleshooting context
@@ -194,6 +202,15 @@ export interface DeviceEventMetadata {
 
   /** Largest gap duration in milliseconds (if gaps detected) */
   largestGapMs?: number;
+
+  /** Detailed gap information (if gaps detected) */
+  gaps?: Array<{
+    gapStart: number;
+    gapEnd: number;
+    durationMs: number;
+    durationText: string;
+    likelyConnectivityIssue: boolean;
+  }>;
 }
 
 /**

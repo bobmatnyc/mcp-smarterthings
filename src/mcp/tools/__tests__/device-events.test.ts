@@ -20,6 +20,7 @@ import {
 import type { ServiceContainer } from '../../../services/ServiceContainer.js';
 import type { DeviceService } from '../../../services/DeviceService.js';
 import type { DeviceInfo } from '../../../types/smartthings.js';
+import { createDeviceId, createLocationId } from '../../../types/smartthings.js';
 import type { DeviceEventResult, DeviceEvent } from '../../../types/device-events.js';
 
 // Mock ServiceContainer
@@ -35,9 +36,9 @@ describe('handleGetDeviceEvents', () => {
 
   // Mock event data factory (use valid UUID)
   const createMockEvent = (overrides?: Partial<DeviceEvent>): DeviceEvent => ({
-    deviceId: '12345678-1234-1234-1234-123456789abc',
+    deviceId: createDeviceId('12345678-1234-1234-1234-123456789abc'),
     deviceName: 'Living Room Light',
-    locationId: '87654321-4321-4321-4321-cba987654321',
+    locationId: createLocationId('87654321-4321-4321-4321-cba987654321'),
     time: '2025-11-27T12:00:00Z',
     epoch: 1732708800000,
     component: 'main',
@@ -50,7 +51,7 @@ describe('handleGetDeviceEvents', () => {
 
   // Mock device info (use valid UUID)
   const mockDevice: DeviceInfo = {
-    deviceId: '12345678-1234-1234-1234-123456789abc' as any,
+    deviceId: createDeviceId('12345678-1234-1234-1234-123456789abc'),
     name: 'Living Room Light',
     type: 'Light',
     capabilities: ['switch' as any],
@@ -66,9 +67,13 @@ describe('handleGetDeviceEvents', () => {
     metadata: {
       totalCount: events.length,
       hasMore: false,
+      dateRange: {
+        earliest: events[events.length - 1]?.time || '2025-11-27T12:00:00Z',
+        latest: events[0]?.time || '2025-11-27T12:00:00Z',
+        durationMs: events.length > 0 ? (events[0]?.epoch || 0) - (events[events.length - 1]?.epoch || 0) : 0,
+      },
       appliedFilters: {},
       gapDetected: false,
-      gaps: [],
       largestGapMs: 0,
       reachedRetentionLimit: false,
       ...overrides?.metadata,
@@ -301,17 +306,13 @@ describe('handleGetDeviceEvents', () => {
         metadata: {
           totalCount: 2,
           hasMore: false,
+          dateRange: {
+            earliest: '2025-11-27T10:00:00Z',
+            latest: '2025-11-27T12:00:00Z',
+            durationMs: 7200000,
+          },
           appliedFilters: {},
           gapDetected: true,
-          gaps: [
-            {
-              gapStart: 1732701600000,
-              gapEnd: 1732708800000,
-              durationMs: 7200000,
-              durationText: '2 hours',
-              likelyConnectivityIssue: true,
-            },
-          ],
           largestGapMs: 7200000,
           reachedRetentionLimit: false,
         },
@@ -337,9 +338,13 @@ describe('handleGetDeviceEvents', () => {
         metadata: {
           totalCount: 1,
           hasMore: false,
+          dateRange: {
+            earliest: '2025-11-27T12:00:00Z',
+            latest: '2025-11-27T12:00:00Z',
+            durationMs: 0,
+          },
           appliedFilters: {},
           gapDetected: false,
-          gaps: [],
           largestGapMs: 0,
           reachedRetentionLimit: true,
         },
@@ -607,24 +612,13 @@ describe('handleGetDeviceEvents', () => {
         metadata: {
           totalCount: 1,
           hasMore: false,
+          dateRange: {
+            earliest: '2025-11-27T10:00:00Z',
+            latest: '2025-11-27T12:00:00Z',
+            durationMs: 7200000,
+          },
           appliedFilters: {},
           gapDetected: true,
-          gaps: [
-            {
-              gapStart: 1732701600000,
-              gapEnd: 1732705200000,
-              durationMs: 3600000,
-              durationText: '1 hour',
-              likelyConnectivityIssue: false,
-            },
-            {
-              gapStart: 1732705200000,
-              gapEnd: 1732708800000,
-              durationMs: 3600000,
-              durationText: '1 hour',
-              likelyConnectivityIssue: false,
-            },
-          ],
           largestGapMs: 3600000,
           reachedRetentionLimit: false,
         },
@@ -649,12 +643,16 @@ describe('handleGetDeviceEvents', () => {
         metadata: {
           totalCount: 1,
           hasMore: false,
+          dateRange: {
+            earliest: '2025-11-27T12:00:00Z',
+            latest: '2025-11-27T12:00:00Z',
+            durationMs: 0,
+          },
           appliedFilters: {
             capabilities: ['switch'],
             attributes: ['switch'],
           },
           gapDetected: false,
-          gaps: [],
           largestGapMs: 0,
           reachedRetentionLimit: false,
         },

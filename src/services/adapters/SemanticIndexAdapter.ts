@@ -25,9 +25,8 @@
 
 import type { SemanticIndex, DeviceMetadataDocument } from '../SemanticIndex.js';
 import type { DeviceInfo, DeviceStatus } from '../../types/smartthings.js';
-import type { UnifiedDevice } from '../../types/unified-device.js';
-import { toUnifiedDevice } from '../transformers/deviceInfoToUnified.js';
 import { createDeviceMetadataDocument } from '../SemanticIndex.js';
+import { toUnifiedDevice } from '../transformers/index.js';
 import logger from '../../utils/logger.js';
 
 /**
@@ -261,8 +260,6 @@ export class SemanticIndexAdapter {
    * @returns Sync result from SemanticIndex
    */
   async syncFromRegistry(registry: any): Promise<any> {
-    const startTime = performance.now();
-
     try {
       const result = await this.semanticIndex.syncWithRegistry(registry);
 

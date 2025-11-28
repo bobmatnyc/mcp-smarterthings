@@ -232,13 +232,24 @@ describe('SemanticIndex', () => {
         distances: [[0.2]],
         metadatas: [[{ name: 'Living Room Motion Sensor', capabilities: ['motionSensor'] }]],
         documents: [['Living Room Motion Sensor, detects motion']],
-      });
+        embeddings: [[null]],
+        include: ['metadatas', 'documents', 'distances'],
+        uris: [[null]],
+        rows: () => [[{
+          ids: 'smartthings:motion1',
+          distances: 0.2,
+          metadatas: { name: 'Living Room Motion Sensor', capabilities: ['motionSensor'] },
+          documents: 'Living Room Motion Sensor, detects motion',
+          embeddings: null,
+          uris: null,
+        }]],
+      } as any);
 
       const results = await semanticIndex.searchDevices('motion sensors');
 
       expect(results).toHaveLength(1);
-      expect(results[0].deviceId).toBe('smartthings:motion1');
-      expect(results[0].score).toBeGreaterThan(0);
+      expect(results[0]!.deviceId).toBe('smartthings:motion1');
+      expect(results[0]!.score).toBeGreaterThan(0);
     });
 
     it('should filter by room', async () => {
@@ -252,7 +263,11 @@ describe('SemanticIndex', () => {
         distances: [[0.3]],
         metadatas: [[{ name: 'Bedroom Temperature Sensor', room: 'Bedroom', capabilities: ['temperatureSensor'] }]],
         documents: [['Bedroom Temperature Sensor, located in Bedroom, measures temperature']],
-      });
+        embeddings: [[null]],
+        include: ['metadatas', 'documents', 'distances'],
+        uris: [[null]],
+        rows: () => [[]],
+      } as any);
 
       const results = await semanticIndex.searchDevices('sensors', {
         filters: { room: 'Bedroom' },
@@ -275,7 +290,11 @@ describe('SemanticIndex', () => {
         distances: [[0.2]],
         metadatas: [[{ name: 'Kitchen Light Switch', capabilities: ['switch', 'dimmer'] }]],
         documents: [['Kitchen Light Switch, can be turned on and off']],
-      });
+        embeddings: [[null]],
+        include: ['metadatas', 'documents', 'distances'],
+        uris: [[null]],
+        rows: () => [[]],
+      } as any);
 
       const results = await semanticIndex.searchDevices('devices', {
         filters: { capabilities: ['switch', 'dimmer'] },
@@ -296,7 +315,11 @@ describe('SemanticIndex', () => {
         distances: [[0.1]],
         metadatas: [[{ name: 'Test Device', platform: Platform.SMARTTHINGS }]],
         documents: [['Test Device']],
-      });
+        embeddings: [[null]],
+        include: ['metadatas', 'documents', 'distances'],
+        uris: [[null]],
+        rows: () => [[]],
+      } as any);
 
       const results = await semanticIndex.searchDevices('devices', {
         filters: { platform: Platform.SMARTTHINGS },
@@ -317,7 +340,11 @@ describe('SemanticIndex', () => {
         distances: [[0.1]],
         metadatas: [[{ name: 'Test Device', online: true }]],
         documents: [['Test Device']],
-      });
+        embeddings: [[null]],
+        include: ['metadatas', 'documents', 'distances'],
+        uris: [[null]],
+        rows: () => [[]],
+      } as any);
 
       const results = await semanticIndex.searchDevices('devices', {
         filters: { online: true },
@@ -355,7 +382,11 @@ describe('SemanticIndex', () => {
         distances: [[]],
         metadatas: [[]],
         documents: [[]],
-      });
+        embeddings: [[]],
+        include: ['metadatas', 'documents', 'distances'],
+        uris: [[]],
+        rows: () => [[]],
+      } as any);
 
       const results = await semanticIndex.searchDevices('nonexistent devices');
 

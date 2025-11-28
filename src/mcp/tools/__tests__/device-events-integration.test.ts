@@ -16,6 +16,7 @@ import {
 import type { ServiceContainer } from '../../../services/ServiceContainer.js';
 import type { DeviceService } from '../../../services/DeviceService.js';
 import type { DeviceInfo } from '../../../types/smartthings.js';
+import { createDeviceId, createLocationId } from '../../../types/smartthings.js';
 import type { DeviceEventResult, DeviceEvent } from '../../../types/device-events.js';
 
 // Mock ServiceContainer
@@ -34,9 +35,9 @@ describe('handleGetDeviceEvents - Integration Tests', () => {
 
   // Helper to create mock event
   const createMockEvent = (): DeviceEvent => ({
-    deviceId: VALID_DEVICE_ID,
+    deviceId: createDeviceId(VALID_DEVICE_ID),
     deviceName: 'Living Room Light',
-    locationId: VALID_LOCATION_ID,
+    locationId: createLocationId(VALID_LOCATION_ID),
     time: '2025-11-27T12:00:00Z',
     epoch: 1732708800000,
     component: 'main',
@@ -52,9 +53,13 @@ describe('handleGetDeviceEvents - Integration Tests', () => {
     metadata: {
       totalCount: eventCount,
       hasMore: false,
+      dateRange: {
+        earliest: '2025-11-27T12:00:00Z',
+        latest: '2025-11-27T12:00:00Z',
+        durationMs: 0,
+      },
       appliedFilters: {},
       gapDetected: false,
-      gaps: [],
       largestGapMs: 0,
       reachedRetentionLimit: false,
     },
@@ -188,17 +193,13 @@ describe('handleGetDeviceEvents - Integration Tests', () => {
         metadata: {
           totalCount: 1,
           hasMore: false,
+          dateRange: {
+            earliest: '2025-11-27T10:00:00Z',
+            latest: '2025-11-27T12:00:00Z',
+            durationMs: 7200000,
+          },
           appliedFilters: {},
           gapDetected: true,
-          gaps: [
-            {
-              gapStart: 1732701600000,
-              gapEnd: 1732708800000,
-              durationMs: 7200000,
-              durationText: '2 hours',
-              likelyConnectivityIssue: true,
-            },
-          ],
           largestGapMs: 7200000,
           reachedRetentionLimit: false,
         },

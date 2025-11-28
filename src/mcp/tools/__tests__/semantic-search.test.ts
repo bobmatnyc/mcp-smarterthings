@@ -178,15 +178,16 @@ describe('semantic_search_devices MCP tool', () => {
       const result = await semanticSearchDevices(input, mockSemanticIndex);
 
       const device = result.devices[0];
-      expect(device.deviceId).toBe('smartthings:motion1');
-      expect(device.name).toBe('Living Room Motion Sensor');
-      expect(device.label).toBe('Motion Sensor');
-      expect(device.room).toBe('Living Room');
-      expect(device.capabilities).toEqual(['motionSensor', 'battery']);
-      expect(device.platform).toBe('smartthings');
-      expect(device.online).toBe(true);
-      expect(device.score).toBe(0.92);
-      expect(device.matchQuality).toBe('excellent');
+      expect(device).toBeDefined();
+      expect(device!.deviceId).toBe('smartthings:motion1');
+      expect(device!.name).toBe('Living Room Motion Sensor');
+      expect(device!.label).toBe('Motion Sensor');
+      expect(device!.room).toBe('Living Room');
+      expect(device!.capabilities).toEqual(['motionSensor', 'battery']);
+      expect(device!.platform).toBe('smartthings');
+      expect(device!.online).toBe(true);
+      expect(device!.score).toBe(0.92);
+      expect(device!.matchQuality).toBe('excellent');
     });
 
     it('should calculate average score correctly', async () => {
@@ -235,11 +236,13 @@ describe('semantic_search_devices MCP tool', () => {
       // Mock results with varying scores
       const mixedResults: DeviceSearchResult[] = [
         {
-          ...mockSearchResults[0],
+          deviceId: mockSearchResults[0]!.deviceId,
+          device: mockSearchResults[0]!.device,
           score: 0.9, // Above threshold
         },
         {
-          ...mockSearchResults[1],
+          deviceId: mockSearchResults[1]!.deviceId,
+          device: mockSearchResults[1]!.device,
           score: 0.4, // Below threshold
         },
       ];
@@ -278,8 +281,8 @@ describe('semantic_search_devices MCP tool', () => {
   describe('Output Formatting Tests', () => {
     it('should include match quality labels', async () => {
       const resultsWithVariedScores: DeviceSearchResult[] = [
-        { ...mockSearchResults[0], score: 0.95 }, // excellent
-        { ...mockSearchResults[1], score: 0.75 }, // good
+        { deviceId: mockSearchResults[0]!.deviceId, device: mockSearchResults[0]!.device, score: 0.95 }, // excellent
+        { deviceId: mockSearchResults[1]!.deviceId, device: mockSearchResults[1]!.device, score: 0.75 }, // good
       ];
 
       vi.mocked(mockSemanticIndex.searchDevices).mockResolvedValue(resultsWithVariedScores);
@@ -292,13 +295,15 @@ describe('semantic_search_devices MCP tool', () => {
 
       const result = await semanticSearchDevices(input, mockSemanticIndex);
 
-      expect(result.devices[0].matchQuality).toBe('excellent');
-      expect(result.devices[1].matchQuality).toBe('good');
+      expect(result.devices[0]).toBeDefined();
+      expect(result.devices[1]).toBeDefined();
+      expect(result.devices[0]!.matchQuality).toBe('excellent');
+      expect(result.devices[1]!.matchQuality).toBe('good');
     });
 
     it('should round scores to 2 decimal places', async () => {
       const resultsWithPreciseScores: DeviceSearchResult[] = [
-        { ...mockSearchResults[0], score: 0.123456 },
+        { deviceId: mockSearchResults[0]!.deviceId, device: mockSearchResults[0]!.device, score: 0.123456 },
       ];
 
       vi.mocked(mockSemanticIndex.searchDevices).mockResolvedValue(resultsWithPreciseScores);
@@ -311,7 +316,8 @@ describe('semantic_search_devices MCP tool', () => {
 
       const result = await semanticSearchDevices(input, mockSemanticIndex);
 
-      expect(result.devices[0].score).toBe(0.12);
+      expect(result.devices[0]).toBeDefined();
+      expect(result.devices[0]!.score).toBe(0.12);
     });
 
     it('should include filters in output when applied', async () => {
@@ -383,8 +389,8 @@ describe('semantic_search_devices MCP tool', () => {
   describe('Match Quality Classification Tests', () => {
     it('should classify scores >= 0.8 as excellent', async () => {
       const results: DeviceSearchResult[] = [
-        { ...mockSearchResults[0], score: 0.95 },
-        { ...mockSearchResults[1], score: 0.8 },
+        { deviceId: mockSearchResults[0]!.deviceId, device: mockSearchResults[0]!.device, score: 0.95 },
+        { deviceId: mockSearchResults[1]!.deviceId, device: mockSearchResults[1]!.device, score: 0.8 },
       ];
 
       vi.mocked(mockSemanticIndex.searchDevices).mockResolvedValue(results);
@@ -397,14 +403,16 @@ describe('semantic_search_devices MCP tool', () => {
 
       const result = await semanticSearchDevices(input, mockSemanticIndex);
 
-      expect(result.devices[0].matchQuality).toBe('excellent');
-      expect(result.devices[1].matchQuality).toBe('excellent');
+      expect(result.devices[0]).toBeDefined();
+      expect(result.devices[1]).toBeDefined();
+      expect(result.devices[0]!.matchQuality).toBe('excellent');
+      expect(result.devices[1]!.matchQuality).toBe('excellent');
     });
 
     it('should classify scores >= 0.6 and < 0.8 as good', async () => {
       const results: DeviceSearchResult[] = [
-        { ...mockSearchResults[0], score: 0.75 },
-        { ...mockSearchResults[1], score: 0.6 },
+        { deviceId: mockSearchResults[0]!.deviceId, device: mockSearchResults[0]!.device, score: 0.75 },
+        { deviceId: mockSearchResults[1]!.deviceId, device: mockSearchResults[1]!.device, score: 0.6 },
       ];
 
       vi.mocked(mockSemanticIndex.searchDevices).mockResolvedValue(results);
@@ -417,14 +425,16 @@ describe('semantic_search_devices MCP tool', () => {
 
       const result = await semanticSearchDevices(input, mockSemanticIndex);
 
-      expect(result.devices[0].matchQuality).toBe('good');
-      expect(result.devices[1].matchQuality).toBe('good');
+      expect(result.devices[0]).toBeDefined();
+      expect(result.devices[1]).toBeDefined();
+      expect(result.devices[0]!.matchQuality).toBe('good');
+      expect(result.devices[1]!.matchQuality).toBe('good');
     });
 
     it('should classify scores < 0.6 as fair', async () => {
       const results: DeviceSearchResult[] = [
-        { ...mockSearchResults[0], score: 0.55 },
-        { ...mockSearchResults[1], score: 0.5 },
+        { deviceId: mockSearchResults[0]!.deviceId, device: mockSearchResults[0]!.device, score: 0.55 },
+        { deviceId: mockSearchResults[1]!.deviceId, device: mockSearchResults[1]!.device, score: 0.5 },
       ];
 
       vi.mocked(mockSemanticIndex.searchDevices).mockResolvedValue(results);
@@ -437,8 +447,10 @@ describe('semantic_search_devices MCP tool', () => {
 
       const result = await semanticSearchDevices(input, mockSemanticIndex);
 
-      expect(result.devices[0].matchQuality).toBe('fair');
-      expect(result.devices[1].matchQuality).toBe('fair');
+      expect(result.devices[0]).toBeDefined();
+      expect(result.devices[1]).toBeDefined();
+      expect(result.devices[0]!.matchQuality).toBe('fair');
+      expect(result.devices[1]!.matchQuality).toBe('fair');
     });
   });
 });

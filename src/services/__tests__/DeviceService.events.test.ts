@@ -14,9 +14,9 @@
 import { describe, it, expect, beforeEach, vi, type Mock } from 'vitest';
 import { DeviceService } from '../DeviceService.js';
 import type { SmartThingsService } from '../../smartthings/client.js';
-import type { DeviceId, LocationId } from '../../types/smartthings.js';
 import type { DeviceEventResult, DeviceEvent } from '../../types/device-events.js';
 import { DeviceServiceError } from '../errors/index.js';
+import { createDeviceId } from '../../types/smartthings.js';
 
 describe('DeviceService.getDeviceEvents', () => {
   let mockSmartThingsService: SmartThingsService;
@@ -24,9 +24,9 @@ describe('DeviceService.getDeviceEvents', () => {
 
   // Mock event data factory
   const createMockEvent = (overrides?: Partial<DeviceEvent>): DeviceEvent => ({
-    deviceId: 'device-123',
+    deviceId: createDeviceId('device-123'),
     deviceName: 'Living Room Light',
-    locationId: 'location-456',
+    locationId: createDeviceId('location-456') as any,
     time: '2025-11-27T12:00:00Z',
     epoch: 1732708800000,
     component: 'main',
@@ -47,9 +47,13 @@ describe('DeviceService.getDeviceEvents', () => {
       hasMore: false,
       appliedFilters: {},
       gapDetected: false,
-      gaps: [],
       largestGapMs: 0,
       reachedRetentionLimit: false,
+      dateRange: {
+        earliest: events[0]?.time || new Date().toISOString(),
+        latest: events[events.length - 1]?.time || new Date().toISOString(),
+        durationMs: 0,
+      },
       ...overrides?.metadata,
     },
     summary: `Found ${events.length} events`,
@@ -86,7 +90,8 @@ describe('DeviceService.getDeviceEvents', () => {
 
       (mockSmartThingsService.getDeviceEvents as Mock).mockResolvedValue(mockResult);
 
-      const result = await deviceService.getDeviceEvents('device-123' as DeviceId, {
+      const deviceId = createDeviceId('device-123');
+      const result = await deviceService.getDeviceEvents(deviceId, {
         startTime: '24h',
         limit: 100,
       });
@@ -94,10 +99,13 @@ describe('DeviceService.getDeviceEvents', () => {
       expect(result).toBeDefined();
       expect(result.events).toHaveLength(2);
       expect(result.metadata.totalCount).toBe(2);
-      expect(mockSmartThingsService.getDeviceEvents).toHaveBeenCalledWith('device-123', {
-        startTime: '24h',
-        limit: 100,
-      });
+      expect(mockSmartThingsService.getDeviceEvents).toHaveBeenCalledWith(
+        deviceId,
+        expect.objectContaining({
+          startTime: '24h',
+          limit: 100,
+        })
+      );
     });
 
     it('should apply time range filters correctly', async () => {
@@ -107,7 +115,7 @@ describe('DeviceService.getDeviceEvents', () => {
       const startTime = new Date('2025-11-20T00:00:00Z');
       const endTime = new Date('2025-11-27T23:59:59Z');
 
-      await deviceService.getDeviceEvents('device-123' as DeviceId, {
+      await deviceService.getDeviceEvents(createDeviceId('device-123'), {
         startTime,
         endTime,
       });
@@ -128,7 +136,7 @@ describe('DeviceService.getDeviceEvents', () => {
       const mockResult = createMockResult(mockEvents);
       (mockSmartThingsService.getDeviceEvents as Mock).mockResolvedValue(mockResult);
 
-      const result = await deviceService.getDeviceEvents('device-123' as DeviceId, {
+      const result = await deviceService.getDeviceEvents(createDeviceId('device-123'), {
         limit: 50,
       });
 
@@ -148,9 +156,9 @@ describe('DeviceService.getDeviceEvents', () => {
         metadata: {
           totalCount: 2,
           hasMore: false,
+          dateRange: { earliest: '2025-11-27T12:00:00Z', latest: '2025-11-27T12:01:00Z', durationMs: 60000 },
           appliedFilters: { capabilities: ['switch'] },
           gapDetected: false,
-          gaps: [],
           largestGapMs: 0,
           reachedRetentionLimit: false,
         },
@@ -158,7 +166,7 @@ describe('DeviceService.getDeviceEvents', () => {
 
       (mockSmartThingsService.getDeviceEvents as Mock).mockResolvedValue(mockResult);
 
-      const result = await deviceService.getDeviceEvents('device-123' as DeviceId, {
+      const result = await deviceService.getDeviceEvents(createDeviceId('device-123'), {
         capabilities: ['switch'] as any,
       });
 
@@ -184,9 +192,9 @@ describe('DeviceService.getDeviceEvents', () => {
         metadata: {
           totalCount: 2,
           hasMore: false,
+          dateRange: { earliest: '2025-11-27T12:00:00Z', latest: '2025-11-27T12:01:00Z', durationMs: 60000 },
           appliedFilters: { attributes: ['temperature'] },
           gapDetected: false,
-          gaps: [],
           largestGapMs: 0,
           reachedRetentionLimit: false,
         },
@@ -194,7 +202,7 @@ describe('DeviceService.getDeviceEvents', () => {
 
       (mockSmartThingsService.getDeviceEvents as Mock).mockResolvedValue(mockResult);
 
-      const result = await deviceService.getDeviceEvents('device-123' as DeviceId, {
+      const result = await deviceService.getDeviceEvents(createDeviceId('device-123'), {
         attributes: ['temperature'],
       });
 
@@ -214,6 +222,7 @@ describe('DeviceService.getDeviceEvents', () => {
         metadata: {
           totalCount: 2,
           hasMore: false,
+          dateRange: { earliest: '2025-11-27T10:00:00Z', latest: '2025-11-27T12:00:00Z', durationMs: 7200000 },
           appliedFilters: {},
           gapDetected: true,
           gaps: [
@@ -232,14 +241,14 @@ describe('DeviceService.getDeviceEvents', () => {
 
       (mockSmartThingsService.getDeviceEvents as Mock).mockResolvedValue(mockResult);
 
-      const result = await deviceService.getDeviceEvents('device-123' as DeviceId, {
+      const result = await deviceService.getDeviceEvents(createDeviceId('device-123'), {
         includeMetadata: true,
       });
 
       expect(result.metadata.gapDetected).toBe(true);
       expect(result.metadata.gaps).toHaveLength(1);
-      expect(result.metadata.gaps![0].durationMs).toBe(7200000);
-      expect(result.metadata.gaps![0].likelyConnectivityIssue).toBe(true);
+      expect(result.metadata.gaps?.[0]?.durationMs).toBe(7200000);
+      expect(result.metadata.gaps?.[0]?.likelyConnectivityIssue).toBe(true);
     });
 
     it('should format timestamps when humanReadable=true', async () => {
@@ -250,11 +259,11 @@ describe('DeviceService.getDeviceEvents', () => {
 
       (mockSmartThingsService.getDeviceEvents as Mock).mockResolvedValue(mockResult);
 
-      const result = await deviceService.getDeviceEvents('device-123' as DeviceId, {
+      const result = await deviceService.getDeviceEvents(createDeviceId('device-123'), {
         humanReadable: true,
       });
 
-      expect(result.events[0].text).toBe('Switch turned on');
+      expect(result.events[0]?.text).toBe('Switch turned on');
     });
   });
 
@@ -263,7 +272,7 @@ describe('DeviceService.getDeviceEvents', () => {
       const mockResult = createMockResult([]);
       (mockSmartThingsService.getDeviceEvents as Mock).mockResolvedValue(mockResult);
 
-      const result = await deviceService.getDeviceEvents('device-123' as DeviceId, {});
+      const result = await deviceService.getDeviceEvents(createDeviceId('device-123'), {});
 
       expect(result.events).toHaveLength(0);
       expect(result.metadata.totalCount).toBe(0);
@@ -276,9 +285,9 @@ describe('DeviceService.getDeviceEvents', () => {
         metadata: {
           totalCount: 1,
           hasMore: false,
+          dateRange: { earliest: '2025-11-27T12:00:00Z', latest: '2025-11-27T12:01:00Z', durationMs: 60000 },
           appliedFilters: {},
           gapDetected: false,
-          gaps: [],
           largestGapMs: 0,
           reachedRetentionLimit: true,
         },
@@ -287,7 +296,7 @@ describe('DeviceService.getDeviceEvents', () => {
       (mockSmartThingsService.getDeviceEvents as Mock).mockResolvedValue(mockResult);
 
       // Try to query 30 days ago (exceeds 7-day limit)
-      const result = await deviceService.getDeviceEvents('device-123' as DeviceId, {
+      const result = await deviceService.getDeviceEvents(createDeviceId('device-123'), {
         startTime: '30d',
       });
 
@@ -299,7 +308,7 @@ describe('DeviceService.getDeviceEvents', () => {
       (mockSmartThingsService.getDeviceEvents as Mock).mockRejectedValue(notFoundError);
 
       await expect(
-        deviceService.getDeviceEvents('nonexistent-device' as DeviceId, {})
+        deviceService.getDeviceEvents(createDeviceId('nonexistent-device'), {})
       ).rejects.toThrow(DeviceServiceError);
     });
 
@@ -311,7 +320,7 @@ describe('DeviceService.getDeviceEvents', () => {
       const endTime = new Date('2025-11-20T12:00:00Z'); // End before start
 
       await expect(
-        deviceService.getDeviceEvents('device-123' as DeviceId, { startTime, endTime })
+        deviceService.getDeviceEvents(createDeviceId('device-123'), { startTime, endTime })
       ).rejects.toThrow(DeviceServiceError);
     });
 
@@ -320,7 +329,7 @@ describe('DeviceService.getDeviceEvents', () => {
       const mockResult = createMockResult([createMockEvent()]);
       (mockSmartThingsService.getDeviceEvents as Mock).mockResolvedValue(mockResult);
 
-      const result = await deviceService.getDeviceEvents('device-123' as DeviceId, {
+      const result = await deviceService.getDeviceEvents(createDeviceId('device-123'), {
         // locationId not provided
       });
 
@@ -337,9 +346,9 @@ describe('DeviceService.getDeviceEvents', () => {
         metadata: {
           totalCount: 100,
           hasMore: true, // More events available
+          dateRange: { earliest: '2025-11-27T12:00:00Z', latest: '2025-11-27T12:01:00Z', durationMs: 60000 },
           appliedFilters: {},
           gapDetected: false,
-          gaps: [],
           largestGapMs: 0,
           reachedRetentionLimit: false,
         },
@@ -347,7 +356,7 @@ describe('DeviceService.getDeviceEvents', () => {
 
       (mockSmartThingsService.getDeviceEvents as Mock).mockResolvedValue(mockResult);
 
-      const result = await deviceService.getDeviceEvents('device-123' as DeviceId, {
+      const result = await deviceService.getDeviceEvents(createDeviceId('device-123'), {
         limit: 100,
       });
 
@@ -368,9 +377,9 @@ describe('DeviceService.getDeviceEvents', () => {
         metadata: {
           totalCount: 5,
           hasMore: false,
+          dateRange: { earliest: '2025-11-27T12:00:00Z', latest: '2025-11-27T12:04:00Z', durationMs: 240000 },
           appliedFilters: {},
           gapDetected: false,
-          gaps: [],
           largestGapMs: 60000, // Just 1 minute
           reachedRetentionLimit: false,
         },
@@ -378,7 +387,7 @@ describe('DeviceService.getDeviceEvents', () => {
 
       (mockSmartThingsService.getDeviceEvents as Mock).mockResolvedValue(mockResult);
 
-      const result = await deviceService.getDeviceEvents('device-123' as DeviceId, {
+      const result = await deviceService.getDeviceEvents(createDeviceId('device-123'), {
         includeMetadata: true,
       });
 
@@ -393,7 +402,7 @@ describe('DeviceService.getDeviceEvents', () => {
       (mockSmartThingsService.getDeviceEvents as Mock).mockRejectedValue(apiError);
 
       await expect(
-        deviceService.getDeviceEvents('device-123' as DeviceId, {})
+        deviceService.getDeviceEvents(createDeviceId('device-123'), {})
       ).rejects.toThrow(DeviceServiceError);
     });
 
@@ -402,7 +411,7 @@ describe('DeviceService.getDeviceEvents', () => {
       (mockSmartThingsService.getDeviceEvents as Mock).mockRejectedValue(apiError);
 
       try {
-        await deviceService.getDeviceEvents('device-123' as DeviceId, { limit: 50 });
+        await deviceService.getDeviceEvents(createDeviceId('device-123'), { limit: 50 });
         // Should not reach here
         expect.fail('Expected DeviceServiceError to be thrown');
       } catch (error) {
@@ -414,7 +423,7 @@ describe('DeviceService.getDeviceEvents', () => {
         expect(serviceError.metadata).toBeDefined();
         // Parameters are stored in metadata.parameters
         expect(serviceError.metadata.parameters).toBeDefined();
-        expect(serviceError.metadata.parameters?.deviceId).toBe('device-123');
+        expect(serviceError.metadata.parameters?.['deviceId']).toBe('device-123');
       }
     });
 
@@ -423,7 +432,7 @@ describe('DeviceService.getDeviceEvents', () => {
       (mockSmartThingsService.getDeviceEvents as Mock).mockRejectedValue(sdkError);
 
       await expect(
-        deviceService.getDeviceEvents('device-123' as DeviceId, {})
+        deviceService.getDeviceEvents(createDeviceId('device-123'), {})
       ).rejects.toThrow(DeviceServiceError);
     });
 
@@ -433,7 +442,7 @@ describe('DeviceService.getDeviceEvents', () => {
       (mockSmartThingsService.getDeviceEvents as Mock).mockRejectedValueOnce(networkError);
 
       await expect(
-        deviceService.getDeviceEvents('device-123' as DeviceId, {})
+        deviceService.getDeviceEvents(createDeviceId('device-123'), {})
       ).rejects.toThrow(DeviceServiceError);
 
       // Verify the error was attempted
@@ -445,7 +454,7 @@ describe('DeviceService.getDeviceEvents', () => {
       (mockSmartThingsService.getDeviceEvents as Mock).mockRejectedValue(invalidError);
 
       await expect(
-        deviceService.getDeviceEvents('' as DeviceId, {}) // Empty deviceId
+        deviceService.getDeviceEvents(createDeviceId(''), {}) // Empty deviceId
       ).rejects.toThrow(DeviceServiceError);
     });
   });
@@ -464,12 +473,12 @@ describe('DeviceService.getDeviceEvents', () => {
         metadata: {
           totalCount: 1,
           hasMore: false,
+          dateRange: { earliest: '2025-11-27T12:00:00Z', latest: '2025-11-27T12:01:00Z', durationMs: 60000 },
           appliedFilters: {
             capabilities: ['temperatureMeasurement'],
             attributes: ['temperature'],
           },
           gapDetected: false,
-          gaps: [],
           largestGapMs: 0,
           reachedRetentionLimit: false,
         },
@@ -477,7 +486,7 @@ describe('DeviceService.getDeviceEvents', () => {
 
       (mockSmartThingsService.getDeviceEvents as Mock).mockResolvedValue(mockResult);
 
-      const result = await deviceService.getDeviceEvents('device-123' as DeviceId, {
+      const result = await deviceService.getDeviceEvents(createDeviceId('device-123'), {
         capabilities: ['temperatureMeasurement'] as any,
         attributes: ['temperature'],
       });
@@ -500,9 +509,9 @@ describe('DeviceService.getDeviceEvents', () => {
         metadata: {
           totalCount: 2,
           hasMore: false,
+          dateRange: { earliest: '2025-11-27T12:00:00Z', latest: '2025-11-27T12:01:00Z', durationMs: 60000 },
           appliedFilters: { capabilities: ['switch', 'temperatureMeasurement'] },
           gapDetected: false,
-          gaps: [],
           largestGapMs: 0,
           reachedRetentionLimit: false,
         },
@@ -510,7 +519,7 @@ describe('DeviceService.getDeviceEvents', () => {
 
       (mockSmartThingsService.getDeviceEvents as Mock).mockResolvedValue(mockResult);
 
-      const result = await deviceService.getDeviceEvents('device-123' as DeviceId, {
+      const result = await deviceService.getDeviceEvents(createDeviceId('device-123'), {
         capabilities: ['switch', 'temperatureMeasurement'] as any,
       });
 
@@ -524,9 +533,9 @@ describe('DeviceService.getDeviceEvents', () => {
         metadata: {
           totalCount: 1,
           hasMore: false,
+          dateRange: { earliest: '2025-11-27T12:00:00Z', latest: '2025-11-27T12:01:00Z', durationMs: 60000 },
           appliedFilters: { capabilities: ['switch'] },
           gapDetected: false,
-          gaps: [],
           largestGapMs: 0,
           reachedRetentionLimit: false,
         },
@@ -534,7 +543,7 @@ describe('DeviceService.getDeviceEvents', () => {
 
       (mockSmartThingsService.getDeviceEvents as Mock).mockResolvedValue(mockResult);
 
-      const result = await deviceService.getDeviceEvents('device-123' as DeviceId, {
+      const result = await deviceService.getDeviceEvents(createDeviceId('device-123'), {
         includeMetadata: true,
       });
 
@@ -554,7 +563,7 @@ describe('DeviceService.getDeviceEvents', () => {
 
       (mockSmartThingsService.getDeviceEvents as Mock).mockResolvedValue(mockResult);
 
-      const result = await deviceService.getDeviceEvents('device-123' as DeviceId, {});
+      const result = await deviceService.getDeviceEvents(createDeviceId('device-123'), {});
 
       expect(result.metadata.totalCount).toBe(42);
     });
@@ -565,7 +574,7 @@ describe('DeviceService.getDeviceEvents', () => {
       const mockResult = createMockResult([createMockEvent()]);
       (mockSmartThingsService.getDeviceEvents as Mock).mockResolvedValue(mockResult);
 
-      await deviceService.getDeviceEvents('device-123' as DeviceId, {});
+      await deviceService.getDeviceEvents(createDeviceId('device-123'), {});
 
       // Logger should have been called with success info
       // (Note: Actual logger verification would require logger mocking)
@@ -577,6 +586,7 @@ describe('DeviceService.getDeviceEvents', () => {
         metadata: {
           totalCount: 1,
           hasMore: false,
+          dateRange: { earliest: '2025-11-27T10:00:00Z', latest: '2025-11-27T12:00:00Z', durationMs: 7200000 },
           appliedFilters: {},
           gapDetected: true,
           gaps: [
@@ -595,7 +605,7 @@ describe('DeviceService.getDeviceEvents', () => {
 
       (mockSmartThingsService.getDeviceEvents as Mock).mockResolvedValue(mockResult);
 
-      const result = await deviceService.getDeviceEvents('device-123' as DeviceId, {
+      const result = await deviceService.getDeviceEvents(createDeviceId('device-123'), {
         includeMetadata: true,
       });
 

@@ -137,9 +137,9 @@ describe('Transformer Integration', () => {
 
     // Verify batch transformation
     expect(unified).toHaveLength(3);
-    expect(unified[0].capabilities).toContain(DeviceCapability.SWITCH);
-    expect(unified[1].capabilities).toContain(DeviceCapability.DIMMER);
-    expect(unified[2].capabilities).toContain(DeviceCapability.TEMPERATURE_SENSOR);
+    expect(unified[0]?.capabilities).toContain(DeviceCapability.SWITCH);
+    expect(unified[1]?.capabilities).toContain(DeviceCapability.DIMMER);
+    expect(unified[2]?.capabilities).toContain(DeviceCapability.TEMPERATURE_SENSOR);
 
     // All have valid universal IDs
     unified.forEach((device) => {

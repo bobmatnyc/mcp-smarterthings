@@ -25,7 +25,7 @@
 
 import type { DeviceRegistry } from '../../abstract/DeviceRegistry.js';
 import type { DeviceInfo, DeviceStatus } from '../../types/smartthings.js';
-import type { UnifiedDevice } from '../../types/unified-device.js';
+import { Platform, createUniversalDeviceId, type UnifiedDevice } from '../../types/unified-device.js';
 import { toUnifiedDevice } from '../transformers/deviceInfoToUnified.js';
 import logger from '../../utils/logger.js';
 
@@ -229,7 +229,7 @@ export class DeviceRegistryAdapter {
 
     // Find devices to add (in current but not in registry)
     const toAdd = currentDevices.filter(
-      (d) => !existingDeviceIds.has(`smartthings:${d.deviceId}`)
+      (d) => !existingDeviceIds.has(createUniversalDeviceId(Platform.SMARTTHINGS, d.deviceId))
     );
 
     // Find devices to remove (in registry but not in current)
@@ -267,7 +267,7 @@ export class DeviceRegistryAdapter {
 
     // Update existing devices (devices in both current and registry)
     const toUpdate = currentDevices.filter((d) =>
-      existingDeviceIds.has(`smartthings:${d.deviceId}`)
+      existingDeviceIds.has(createUniversalDeviceId(Platform.SMARTTHINGS, d.deviceId))
     );
 
     for (const deviceInfo of toUpdate) {
