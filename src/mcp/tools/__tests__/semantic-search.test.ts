@@ -281,8 +281,16 @@ describe('semantic_search_devices MCP tool', () => {
   describe('Output Formatting Tests', () => {
     it('should include match quality labels', async () => {
       const resultsWithVariedScores: DeviceSearchResult[] = [
-        { deviceId: mockSearchResults[0]!.deviceId, device: mockSearchResults[0]!.device, score: 0.95 }, // excellent
-        { deviceId: mockSearchResults[1]!.deviceId, device: mockSearchResults[1]!.device, score: 0.75 }, // good
+        {
+          deviceId: mockSearchResults[0]!.deviceId,
+          device: mockSearchResults[0]!.device,
+          score: 0.95,
+        }, // excellent
+        {
+          deviceId: mockSearchResults[1]!.deviceId,
+          device: mockSearchResults[1]!.device,
+          score: 0.75,
+        }, // good
       ];
 
       vi.mocked(mockSemanticIndex.searchDevices).mockResolvedValue(resultsWithVariedScores);
@@ -303,7 +311,11 @@ describe('semantic_search_devices MCP tool', () => {
 
     it('should round scores to 2 decimal places', async () => {
       const resultsWithPreciseScores: DeviceSearchResult[] = [
-        { deviceId: mockSearchResults[0]!.deviceId, device: mockSearchResults[0]!.device, score: 0.123456 },
+        {
+          deviceId: mockSearchResults[0]!.deviceId,
+          device: mockSearchResults[0]!.device,
+          score: 0.123456,
+        },
       ];
 
       vi.mocked(mockSemanticIndex.searchDevices).mockResolvedValue(resultsWithPreciseScores);
@@ -351,9 +363,7 @@ describe('semantic_search_devices MCP tool', () => {
 
   describe('Error Handling Tests', () => {
     it('should handle search failures gracefully', async () => {
-      vi.mocked(mockSemanticIndex.searchDevices).mockRejectedValue(
-        new Error('Search failed')
-      );
+      vi.mocked(mockSemanticIndex.searchDevices).mockRejectedValue(new Error('Search failed'));
 
       const input: SemanticSearchDevicesInput = {
         query: 'sensors',
@@ -389,8 +399,16 @@ describe('semantic_search_devices MCP tool', () => {
   describe('Match Quality Classification Tests', () => {
     it('should classify scores >= 0.8 as excellent', async () => {
       const results: DeviceSearchResult[] = [
-        { deviceId: mockSearchResults[0]!.deviceId, device: mockSearchResults[0]!.device, score: 0.95 },
-        { deviceId: mockSearchResults[1]!.deviceId, device: mockSearchResults[1]!.device, score: 0.8 },
+        {
+          deviceId: mockSearchResults[0]!.deviceId,
+          device: mockSearchResults[0]!.device,
+          score: 0.95,
+        },
+        {
+          deviceId: mockSearchResults[1]!.deviceId,
+          device: mockSearchResults[1]!.device,
+          score: 0.8,
+        },
       ];
 
       vi.mocked(mockSemanticIndex.searchDevices).mockResolvedValue(results);
@@ -411,8 +429,16 @@ describe('semantic_search_devices MCP tool', () => {
 
     it('should classify scores >= 0.6 and < 0.8 as good', async () => {
       const results: DeviceSearchResult[] = [
-        { deviceId: mockSearchResults[0]!.deviceId, device: mockSearchResults[0]!.device, score: 0.75 },
-        { deviceId: mockSearchResults[1]!.deviceId, device: mockSearchResults[1]!.device, score: 0.6 },
+        {
+          deviceId: mockSearchResults[0]!.deviceId,
+          device: mockSearchResults[0]!.device,
+          score: 0.75,
+        },
+        {
+          deviceId: mockSearchResults[1]!.deviceId,
+          device: mockSearchResults[1]!.device,
+          score: 0.6,
+        },
       ];
 
       vi.mocked(mockSemanticIndex.searchDevices).mockResolvedValue(results);
@@ -433,8 +459,16 @@ describe('semantic_search_devices MCP tool', () => {
 
     it('should classify scores < 0.6 as fair', async () => {
       const results: DeviceSearchResult[] = [
-        { deviceId: mockSearchResults[0]!.deviceId, device: mockSearchResults[0]!.device, score: 0.55 },
-        { deviceId: mockSearchResults[1]!.deviceId, device: mockSearchResults[1]!.device, score: 0.5 },
+        {
+          deviceId: mockSearchResults[0]!.deviceId,
+          device: mockSearchResults[0]!.device,
+          score: 0.55,
+        },
+        {
+          deviceId: mockSearchResults[1]!.deviceId,
+          device: mockSearchResults[1]!.device,
+          score: 0.5,
+        },
       ];
 
       vi.mocked(mockSemanticIndex.searchDevices).mockResolvedValue(results);

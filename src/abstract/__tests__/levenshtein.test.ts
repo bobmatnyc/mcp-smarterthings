@@ -97,12 +97,7 @@ describe('similarityScore', () => {
 });
 
 describe('findBestMatch', () => {
-  const candidates = [
-    'Living Room Light',
-    'Bedroom Lamp',
-    'Kitchen Light',
-    'Bathroom Fan',
-  ];
+  const candidates = ['Living Room Light', 'Bedroom Lamp', 'Kitchen Light', 'Bathroom Fan'];
 
   it('should find exact match', () => {
     const result = findBestMatch('Living Room Light', candidates);
@@ -142,11 +137,7 @@ describe('findBestMatch', () => {
   });
 
   it('should find closest match among similar candidates', () => {
-    const similar = [
-      'Living Room Light 1',
-      'Living Room Light 2',
-      'Living Room Light 3',
-    ];
+    const similar = ['Living Room Light 1', 'Living Room Light 2', 'Living Room Light 3'];
 
     const result = findBestMatch('Living Room Light 2', similar);
 
@@ -167,7 +158,7 @@ describe('findAllMatches', () => {
     const results = findAllMatches('Room Light', candidates, 0.5);
 
     expect(results.length).toBeGreaterThan(0);
-    expect(results.every(r => r.score >= 0.5)).toBe(true);
+    expect(results.every((r) => r.score >= 0.5)).toBe(true);
   });
 
   it('should sort results by score descending', () => {
@@ -212,7 +203,7 @@ describe('findAllMatches', () => {
     // Should match both 'Living Room Light' and 'Living Room Fan'
     expect(results.length).toBeGreaterThanOrEqual(2);
 
-    const matches = results.map(r => r.match);
+    const matches = results.map((r) => r.match);
     expect(matches).toContain('Living Room Light');
     expect(matches).toContain('Living Room Fan');
   });
@@ -250,7 +241,7 @@ describe('Real-World Device Name Scenarios', () => {
     const results = findAllMatches('Living Room', deviceNames, 0.5);
 
     expect(results.length).toBeGreaterThanOrEqual(3);
-    const matches = results.map(r => r.match);
+    const matches = results.map((r) => r.match);
     expect(matches).toContain('Living Room Light');
     expect(matches).toContain('Living Room Lamp');
     expect(matches).toContain('Living Room Fan');

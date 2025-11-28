@@ -15,11 +15,7 @@ import type {
   CapabilityName,
 } from '../types/smartthings.js';
 import type { ISmartThingsService } from '../services/interfaces.js';
-import type {
-  DeviceEventOptions,
-  DeviceEventResult,
-  DeviceEvent,
-} from '../types/device-events.js';
+import type { DeviceEventOptions, DeviceEventResult, DeviceEvent } from '../types/device-events.js';
 import {
   parseTimeRange,
   validateRetentionLimit,
@@ -576,9 +572,7 @@ export class SmartThingsService implements ISmartThingsService {
         deviceName = device.name;
         logger.debug('Retrieved locationId from device', { deviceId, locationId });
       } catch (error) {
-        throw new Error(
-          `Failed to get device information for ${deviceId}. Device may not exist.`
-        );
+        throw new Error(`Failed to get device information for ${deviceId}. Device may not exist.`);
       }
     }
 

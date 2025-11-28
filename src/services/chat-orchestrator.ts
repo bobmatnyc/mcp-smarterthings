@@ -208,7 +208,7 @@ export class ChatOrchestrator implements IChatOrchestrator {
     'help me figure out',
     'issue with',
     'problem with',
-    'won\'t',
+    "won't",
     'keeps',
   ];
 
@@ -408,14 +408,10 @@ export class ChatOrchestrator implements IChatOrchestrator {
           : this.conversationHistory;
 
         // Get LLM response with optional web search
-        const llmResponse = await this.llmService.chat(
-          messagesWithContext,
-          this.availableTools,
-          {
-            enableWebSearch,
-            searchConfig: webSearchConfig,
-          }
-        );
+        const llmResponse = await this.llmService.chat(messagesWithContext, this.availableTools, {
+          enableWebSearch,
+          searchConfig: webSearchConfig,
+        });
 
         // Add assistant response to history (even if it has tool calls)
         const assistantMessage: ChatMessage = {
@@ -661,7 +657,7 @@ export class ChatOrchestrator implements IChatOrchestrator {
       }
 
       void this.setMode(ChatMode.TROUBLESHOOTING);
-      return '🔧 Switched to troubleshooting mode. I\'ll help diagnose issues systematically using event history and web search.';
+      return "🔧 Switched to troubleshooting mode. I'll help diagnose issues systematically using event history and web search.";
     }
 
     if (trimmed === '/normal') {
@@ -727,7 +723,10 @@ export class ChatOrchestrator implements IChatOrchestrator {
     if (codeBlocks) {
       for (const block of codeBlocks) {
         // Remove the ``` markers
-        const cleaned = block.replace(/```[a-z]*\n?/g, '').replace(/```$/g, '').trim();
+        const cleaned = block
+          .replace(/```[a-z]*\n?/g, '')
+          .replace(/```$/g, '')
+          .trim();
         sections.push(cleaned);
       }
     }

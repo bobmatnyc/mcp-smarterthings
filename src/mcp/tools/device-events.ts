@@ -229,9 +229,8 @@ function formatEventText(event: DeviceEvent): string {
 
   // Format value with unit
   const valueStr =
-    event.translatedAttributeValue ?? (typeof event.value === 'object'
-      ? JSON.stringify(event.value)
-      : String(event.value));
+    event.translatedAttributeValue ??
+    (typeof event.value === 'object' ? JSON.stringify(event.value) : String(event.value));
 
   const unitStr = event.unit ? ` ${event.unit}` : '';
 
@@ -514,7 +513,8 @@ Example Queries:
         capabilities: {
           type: 'array',
           items: { type: 'string' },
-          description: 'Filter by specific capabilities (e.g., ["switch", "temperatureMeasurement"])',
+          description:
+            'Filter by specific capabilities (e.g., ["switch", "temperatureMeasurement"])',
         },
         attributes: {
           type: 'array',

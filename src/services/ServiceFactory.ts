@@ -152,6 +152,13 @@ export class ServiceFactory {
       deviceService: this.createDeviceService(smartThingsService),
       locationService: this.createLocationService(smartThingsService),
       sceneService: this.createSceneService(smartThingsService),
+      // Note: AutomationService requires SmartThingsAdapter, not available in ServiceFactory
+      // Use ServiceContainer with SmartThingsAdapter for automation features
+      get automationService(): never {
+        throw new Error(
+          'AutomationService not available via ServiceFactory - use ServiceContainer with SmartThingsAdapter'
+        );
+      },
     };
   }
 
@@ -187,6 +194,14 @@ export class ServiceFactory {
       deviceService: mocks?.deviceService ?? this.createDeviceService(smartThingsService),
       locationService: mocks?.locationService ?? this.createLocationService(smartThingsService),
       sceneService: mocks?.sceneService ?? this.createSceneService(smartThingsService),
+      // Allow mocking automationService for tests, otherwise throw error
+      automationService:
+        mocks?.automationService ??
+        (() => {
+          throw new Error(
+            'AutomationService not available via ServiceFactory - use ServiceContainer with SmartThingsAdapter or provide mock'
+          );
+        })(),
     };
   }
 }

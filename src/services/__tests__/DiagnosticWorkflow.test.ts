@@ -63,11 +63,7 @@ describe('DiagnosticWorkflow', () => {
     mockDeviceService = createMockDeviceService();
     mockDeviceRegistry = createMockDeviceRegistry();
 
-    workflow = new DiagnosticWorkflow(
-      mockSemanticIndex,
-      mockDeviceService,
-      mockDeviceRegistry
-    );
+    workflow = new DiagnosticWorkflow(mockSemanticIndex, mockDeviceService, mockDeviceRegistry);
   });
 
   describe('Device Resolution', () => {
@@ -463,7 +459,9 @@ describe('DiagnosticWorkflow', () => {
       // Should have health data with offline status
       expect(report.diagnosticContext.healthData?.online).toBe(false);
       expect(report.recommendations.length).toBeGreaterThan(0);
-      expect(report.recommendations.some(r => r.includes('power') || r.includes('network'))).toBe(true);
+      expect(report.recommendations.some((r) => r.includes('power') || r.includes('network'))).toBe(
+        true
+      );
     });
 
     it('should generate recommendations for low battery', async () => {
@@ -501,7 +499,7 @@ describe('DiagnosticWorkflow', () => {
       // Should have battery warning
       expect(report.diagnosticContext.healthData?.batteryLevel).toBe(15);
       expect(report.recommendations.length).toBeGreaterThan(0);
-      expect(report.recommendations.some(r => r.toLowerCase().includes('battery'))).toBe(true);
+      expect(report.recommendations.some((r) => r.toLowerCase().includes('battery'))).toBe(true);
     });
 
     it('should include timestamp and confidence in report', async () => {

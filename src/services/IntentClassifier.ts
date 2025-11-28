@@ -247,7 +247,11 @@ export class IntentClassifier {
     const lower = message.toLowerCase();
 
     // MODE_MANAGEMENT patterns (very high confidence)
-    if (lower.match(/^\/troubleshoot|enter.*troubleshoot|start.*diagnos|exit.*troubleshoot|leave.*troubleshoot|^\/normal/)) {
+    if (
+      lower.match(
+        /^\/troubleshoot|enter.*troubleshoot|start.*diagnos|exit.*troubleshoot|leave.*troubleshoot|^\/normal/
+      )
+    ) {
       return {
         intent: DiagnosticIntent.MODE_MANAGEMENT,
         confidence: 0.95,
@@ -257,7 +261,11 @@ export class IntentClassifier {
     }
 
     // DEVICE_HEALTH patterns (high confidence)
-    if (lower.match(/\b(check|test|status|working|ok|healthy|health)\b.*\b(device|sensor|light|switch|lock|thermostat)/)) {
+    if (
+      lower.match(
+        /\b(check|test|status|working|ok|healthy|health)\b.*\b(device|sensor|light|switch|lock|thermostat)/
+      )
+    ) {
       return {
         intent: DiagnosticIntent.DEVICE_HEALTH,
         confidence: 0.85,
@@ -267,7 +275,11 @@ export class IntentClassifier {
     }
 
     // ISSUE_DIAGNOSIS patterns (high confidence)
-    if (lower.match(/\b(why|problem|issue|not work|won't|keeps|random|always|never|stopped|broken|fix)\b/)) {
+    if (
+      lower.match(
+        /\b(why|problem|issue|not work|won't|keeps|random|always|never|stopped|broken|fix)\b/
+      )
+    ) {
       return {
         intent: DiagnosticIntent.ISSUE_DIAGNOSIS,
         confidence: 0.85,
@@ -277,7 +289,11 @@ export class IntentClassifier {
     }
 
     // SYSTEM_STATUS patterns (medium-high confidence)
-    if (lower.match(/\b(system|all|overview|dashboard|everything)\b.*(status|health|ok|working|doing)/)) {
+    if (
+      lower.match(
+        /\b(system|all|overview|dashboard|everything)\b.*(status|health|ok|working|doing)/
+      )
+    ) {
       return {
         intent: DiagnosticIntent.SYSTEM_STATUS,
         confidence: 0.9,
@@ -362,9 +378,10 @@ Respond in JSON format:
   "reasoning": "Brief explanation of why this intent was chosen"
 }`;
 
-    const userPrompt = context && context.length > 0
-      ? `Conversation context:\n${context.slice(-3).join('\n')}\n\nCurrent message: ${message}`
-      : message;
+    const userPrompt =
+      context && context.length > 0
+        ? `Conversation context:\n${context.slice(-3).join('\n')}\n\nCurrent message: ${message}`
+        : message;
 
     const response = await this.llmService.chat(
       [
@@ -402,7 +419,9 @@ Respond in JSON format:
         error: error instanceof Error ? error.message : String(error),
         response: response.content,
       });
-      throw new Error(`Failed to parse LLM response: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Failed to parse LLM response: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 

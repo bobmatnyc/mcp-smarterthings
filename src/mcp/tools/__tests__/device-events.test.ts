@@ -13,10 +13,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi, type Mock } from 'vitest';
-import {
-  handleGetDeviceEvents,
-  initializeDeviceEventTools,
-} from '../device-events.js';
+import { handleGetDeviceEvents, initializeDeviceEventTools } from '../device-events.js';
 import type { ServiceContainer } from '../../../services/ServiceContainer.js';
 import type { DeviceService } from '../../../services/DeviceService.js';
 import type { DeviceInfo } from '../../../types/smartthings.js';
@@ -70,7 +67,8 @@ describe('handleGetDeviceEvents', () => {
       dateRange: {
         earliest: events[events.length - 1]?.time || '2025-11-27T12:00:00Z',
         latest: events[0]?.time || '2025-11-27T12:00:00Z',
-        durationMs: events.length > 0 ? (events[0]?.epoch || 0) - (events[events.length - 1]?.epoch || 0) : 0,
+        durationMs:
+          events.length > 0 ? (events[0]?.epoch || 0) - (events[events.length - 1]?.epoch || 0) : 0,
       },
       appliedFilters: {},
       gapDetected: false,
@@ -398,9 +396,7 @@ describe('handleGetDeviceEvents', () => {
     });
 
     it('should respect humanReadable parameter', async () => {
-      const mockResult = createMockResult([
-        createMockEvent({ text: 'Switch turned on' }),
-      ]);
+      const mockResult = createMockResult([createMockEvent({ text: 'Switch turned on' })]);
       (mockDeviceService.getDeviceEvents as Mock).mockResolvedValue(mockResult);
 
       const result = await handleGetDeviceEvents({
@@ -555,7 +551,9 @@ describe('handleGetDeviceEvents', () => {
         deviceId: '12345678-1234-1234-1234-123456789abc',
       });
 
-      expect(mockDeviceService.getDevice).toHaveBeenCalledWith('12345678-1234-1234-1234-123456789abc');
+      expect(mockDeviceService.getDevice).toHaveBeenCalledWith(
+        '12345678-1234-1234-1234-123456789abc'
+      );
     });
 
     it('should pass all options to DeviceService', async () => {

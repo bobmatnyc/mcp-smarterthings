@@ -467,7 +467,7 @@ export class DeviceRegistry {
     if (filter.roomId || filter.namePattern?.source.includes('room')) {
       const room = filter.roomId?.toString();
       if (room && this.roomIndex.has(room)) {
-        candidateIds = new Set(this.roomIndex.get(room)!);
+        candidateIds = new Set(this.roomIndex.get(room));
       } else {
         return []; // Room doesn't exist
       }

@@ -14,7 +14,11 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { DeviceRegistry } from '../../../abstract/DeviceRegistry.js';
 import { DeviceRegistryAdapter } from '../DeviceRegistryAdapter.js';
 import { createDeviceId } from '../../../types/smartthings.js';
-import { DeviceCapability, Platform, createUniversalDeviceId } from '../../../types/unified-device.js';
+import {
+  DeviceCapability,
+  Platform,
+  createUniversalDeviceId,
+} from '../../../types/unified-device.js';
 import type { DeviceInfo, DeviceStatus } from '../../../types/smartthings.js';
 
 describe('DeviceRegistryAdapter', () => {
@@ -41,7 +45,9 @@ describe('DeviceRegistryAdapter', () => {
       expect(added).toBe(true);
 
       // Verify device was added with correct transformation
-      const device = registry.getDevice(createUniversalDeviceId(Platform.SMARTTHINGS, 'test-device-1'));
+      const device = registry.getDevice(
+        createUniversalDeviceId(Platform.SMARTTHINGS, 'test-device-1')
+      );
       expect(device).toBeDefined();
       expect(device?.name).toBe('Living Room Light');
       expect(device?.label).toBe('Main Light');
@@ -80,7 +86,9 @@ describe('DeviceRegistryAdapter', () => {
 
       adapter.addDeviceInfo(deviceInfo, status);
 
-      const device = registry.getDevice(createUniversalDeviceId(Platform.SMARTTHINGS, 'test-device-2'));
+      const device = registry.getDevice(
+        createUniversalDeviceId(Platform.SMARTTHINGS, 'test-device-2')
+      );
       expect(device?.online).toBe(true);
       expect(device?.lastSeen).toEqual(new Date('2024-01-15T12:30:00Z'));
     });
@@ -106,7 +114,9 @@ describe('DeviceRegistryAdapter', () => {
       const updated = adapter.updateDeviceInfo(updatedInfo);
       expect(updated).toBe(true);
 
-      const device = registry.getDevice(createUniversalDeviceId(Platform.SMARTTHINGS, 'test-device-3'));
+      const device = registry.getDevice(
+        createUniversalDeviceId(Platform.SMARTTHINGS, 'test-device-3')
+      );
       expect(device?.name).toBe('Updated Name');
       expect(device?.label).toBe('New Label');
       expect(device?.room).toBe('Bedroom');
@@ -132,7 +142,9 @@ describe('DeviceRegistryAdapter', () => {
 
       adapter.addDeviceInfo(deviceInfo);
 
-      const device = registry.getDevice(createUniversalDeviceId(Platform.SMARTTHINGS, 'test-device-4'));
+      const device = registry.getDevice(
+        createUniversalDeviceId(Platform.SMARTTHINGS, 'test-device-4')
+      );
       expect(device?.capabilities).toEqual([DeviceCapability.SWITCH]);
     });
   });
@@ -165,9 +177,15 @@ describe('DeviceRegistryAdapter', () => {
       expect(result.durationMs).toBeGreaterThan(0);
 
       // Verify all devices added
-      expect(registry.getDevice(createUniversalDeviceId(Platform.SMARTTHINGS, 'batch-1'))).toBeDefined();
-      expect(registry.getDevice(createUniversalDeviceId(Platform.SMARTTHINGS, 'batch-2'))).toBeDefined();
-      expect(registry.getDevice(createUniversalDeviceId(Platform.SMARTTHINGS, 'batch-3'))).toBeDefined();
+      expect(
+        registry.getDevice(createUniversalDeviceId(Platform.SMARTTHINGS, 'batch-1'))
+      ).toBeDefined();
+      expect(
+        registry.getDevice(createUniversalDeviceId(Platform.SMARTTHINGS, 'batch-2'))
+      ).toBeDefined();
+      expect(
+        registry.getDevice(createUniversalDeviceId(Platform.SMARTTHINGS, 'batch-3'))
+      ).toBeDefined();
     });
 
     it('batch adds with status map', async () => {
@@ -328,7 +346,9 @@ describe('DeviceRegistryAdapter', () => {
       expect(result.added).toBe(0);
       expect(result.removed).toBe(0);
 
-      const device = registry.getDevice(createUniversalDeviceId(Platform.SMARTTHINGS, 'sync-update-1'));
+      const device = registry.getDevice(
+        createUniversalDeviceId(Platform.SMARTTHINGS, 'sync-update-1')
+      );
       expect(device?.name).toBe('Updated Name');
       expect(device?.label).toBe('New Label');
       expect(device?.room).toBe('Living Room');
@@ -396,10 +416,18 @@ describe('DeviceRegistryAdapter', () => {
       expect(result.unchanged).toBe(1);
 
       // Verify final state
-      expect(registry.getDevice(createUniversalDeviceId(Platform.SMARTTHINGS, 'keep-1'))).toBeDefined();
-      expect(registry.getDevice(createUniversalDeviceId(Platform.SMARTTHINGS, 'update-1'))?.room).toBe('New Room');
-      expect(registry.getDevice(createUniversalDeviceId(Platform.SMARTTHINGS, 'add-1'))).toBeDefined();
-      expect(registry.getDevice(createUniversalDeviceId(Platform.SMARTTHINGS, 'remove-1'))).toBeUndefined();
+      expect(
+        registry.getDevice(createUniversalDeviceId(Platform.SMARTTHINGS, 'keep-1'))
+      ).toBeDefined();
+      expect(
+        registry.getDevice(createUniversalDeviceId(Platform.SMARTTHINGS, 'update-1'))?.room
+      ).toBe('New Room');
+      expect(
+        registry.getDevice(createUniversalDeviceId(Platform.SMARTTHINGS, 'add-1'))
+      ).toBeDefined();
+      expect(
+        registry.getDevice(createUniversalDeviceId(Platform.SMARTTHINGS, 'remove-1'))
+      ).toBeUndefined();
     });
   });
 

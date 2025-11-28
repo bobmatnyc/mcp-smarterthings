@@ -168,12 +168,7 @@ describe('Transformer Integration', () => {
     const deviceInfo: DeviceInfo = {
       deviceId: createDeviceId('future-device'),
       name: 'Future Device',
-      capabilities: [
-        'switch',
-        'futureCapability2025',
-        'switchLevel',
-        'experimentalFeature',
-      ],
+      capabilities: ['switch', 'futureCapability2025', 'switchLevel', 'experimentalFeature'],
     };
 
     const unified = toUnifiedDevice(deviceInfo);

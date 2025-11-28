@@ -25,7 +25,11 @@
 
 import type { DeviceRegistry } from '../../abstract/DeviceRegistry.js';
 import type { DeviceInfo, DeviceStatus } from '../../types/smartthings.js';
-import { Platform, createUniversalDeviceId, type UnifiedDevice } from '../../types/unified-device.js';
+import {
+  Platform,
+  createUniversalDeviceId,
+  type UnifiedDevice,
+} from '../../types/unified-device.js';
 import { toUnifiedDevice } from '../transformers/deviceInfoToUnified.js';
 import logger from '../../utils/logger.js';
 
@@ -219,9 +223,7 @@ export class DeviceRegistryAdapter {
     };
 
     // Build set of current device IDs
-    const currentDeviceIds = new Set(
-      currentDevices.map((d) => `smartthings:${d.deviceId}`)
-    );
+    const currentDeviceIds = new Set(currentDevices.map((d) => `smartthings:${d.deviceId}`));
 
     // Get existing devices
     const existingDevices = this.registry.getAllDevices();

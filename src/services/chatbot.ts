@@ -326,7 +326,15 @@ export class ChatbotService implements IChatbotService {
       : troubleshootingList.map((ex) => '  • ' + ex).join('\n');
 
     output.write(
-      title + commandsText + '\n' + examples + examplesText + '\n' + troubleshooting + troubleshootingText + '\n\n'
+      title +
+        commandsText +
+        '\n' +
+        examples +
+        examplesText +
+        '\n' +
+        troubleshooting +
+        troubleshootingText +
+        '\n\n'
     );
   }
 

@@ -9,10 +9,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi, type Mock } from 'vitest';
-import {
-  handleGetDeviceEvents,
-  initializeDeviceEventTools,
-} from '../device-events.js';
+import { handleGetDeviceEvents, initializeDeviceEventTools } from '../device-events.js';
 import type { ServiceContainer } from '../../../services/ServiceContainer.js';
 import type { DeviceService } from '../../../services/DeviceService.js';
 import type { DeviceInfo } from '../../../types/smartthings.js';

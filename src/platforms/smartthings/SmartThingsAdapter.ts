@@ -29,6 +29,7 @@ import {
   BearerTokenAuthenticator,
   type Device,
   type DeviceStatus as STDeviceStatus,
+  type Rule,
 } from '@smartthings/core-sdk';
 import type { IDeviceAdapter } from '../../adapters/base/IDeviceAdapter.js';
 import {
@@ -939,6 +940,85 @@ export class SmartThingsAdapter extends EventEmitter implements IDeviceAdapter {
       const wrappedError = this.wrapError(error, 'executeScene', { sceneId });
       this.errorCount++;
       this.emitError(wrappedError, 'executeScene');
+      throw wrappedError;
+    }
+  }
+
+  //
+  // Rules API (Automation Operations)
+  //
+
+  /**
+   * List all rules for a location.
+   *
+   * Rules represent automations created via SmartThings API or app.
+   * Required for automation identification in diagnostic workflows.
+   *
+   * @param locationId Location UUID (required by SmartThings Rules API)
+   * @returns Array of rules for the location
+   */
+  async listRules(locationId: string): Promise<Rule[]> {
+    this.ensureInitialized();
+
+    logger.debug('Listing rules', { platform: this.platform, locationId });
+
+    try {
+      const rules = await retryWithBackoff(async () => {
+        return await this.client!.rules.list(locationId);
+      });
+
+      this.lastHealthCheck = new Date();
+      this.errorCount = 0;
+
+      // Handle undefined/null response from API (defensive)
+      const ruleArray = rules || [];
+
+      logger.info('Rules listed successfully', {
+        platform: this.platform,
+        count: ruleArray.length,
+        locationId,
+      });
+
+      return ruleArray;
+    } catch (error) {
+      const wrappedError = this.wrapError(error, 'listRules', { locationId });
+      this.errorCount++;
+      this.emitError(wrappedError, 'listRules');
+      throw wrappedError;
+    }
+  }
+
+  /**
+   * Get specific rule details.
+   *
+   * @param ruleId Rule UUID
+   * @param locationId Location UUID (required by SmartThings Rules API)
+   * @returns Rule details
+   */
+  async getRule(ruleId: string, locationId: string): Promise<Rule> {
+    this.ensureInitialized();
+
+    logger.debug('Getting rule', { platform: this.platform, ruleId, locationId });
+
+    try {
+      const rule = await retryWithBackoff(async () => {
+        return await this.client!.rules.get(ruleId, locationId);
+      });
+
+      this.lastHealthCheck = new Date();
+      this.errorCount = 0;
+
+      logger.info('Rule retrieved successfully', {
+        platform: this.platform,
+        ruleId,
+        locationId,
+      });
+
+      return rule;
+    } catch (error) {
+      const wrappedError = this.wrapError(error, 'getRule', { ruleId, locationId });
+      this.errorCount++;
+      this.emitError(wrappedError, 'getRule');
       throw wrappedError;
     }
   }

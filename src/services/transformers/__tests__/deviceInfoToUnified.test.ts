@@ -87,12 +87,7 @@ describe('toUnifiedDevice', () => {
       const deviceInfo: DeviceInfo = {
         deviceId: createDeviceId('device-001'),
         name: 'Smart Light',
-        capabilities: [
-          'switch',
-          'switchLevel',
-          'colorControl',
-          'colorTemperature',
-        ],
+        capabilities: ['switch', 'switchLevel', 'colorControl', 'colorTemperature'],
       };
 
       const result = toUnifiedDevice(deviceInfo);
@@ -135,11 +130,7 @@ describe('toUnifiedDevice', () => {
       const deviceInfo: DeviceInfo = {
         deviceId: createDeviceId('device-003'),
         name: 'Smart Speaker',
-        capabilities: [
-          'audioVolume',
-          'speaker',
-          'mediaPlayback',
-        ],
+        capabilities: ['audioVolume', 'speaker', 'mediaPlayback'],
       };
 
       const result = toUnifiedDevice(deviceInfo);
@@ -147,7 +138,9 @@ describe('toUnifiedDevice', () => {
       expect(result.capabilities).toContain(DeviceCapability.SPEAKER);
       expect(result.capabilities).toContain(DeviceCapability.MEDIA_PLAYER);
       // Note: audioVolume and speaker both map to SPEAKER, so only one instance
-      expect(result.capabilities.filter(c => c === DeviceCapability.SPEAKER).length).toBeGreaterThan(0);
+      expect(
+        result.capabilities.filter((c) => c === DeviceCapability.SPEAKER).length
+      ).toBeGreaterThan(0);
     });
 
     it('maps thermostat capability', () => {
@@ -207,11 +200,7 @@ describe('toUnifiedDevice', () => {
       const deviceInfo: DeviceInfo = {
         deviceId: createDeviceId('device-008'),
         name: 'Safety Sensors',
-        capabilities: [
-          'smokeDetector',
-          'carbonMonoxideDetector',
-          'waterSensor',
-        ],
+        capabilities: ['smokeDetector', 'carbonMonoxideDetector', 'waterSensor'],
       };
 
       const result = toUnifiedDevice(deviceInfo);
@@ -253,7 +242,9 @@ describe('toUnifiedDevice', () => {
       // Both should map to DOOR_CONTROL
       expect(result.capabilities).toContain(DeviceCapability.DOOR_CONTROL);
       // Should deduplicate since both map to same capability
-      const doorControlCount = result.capabilities.filter(c => c === DeviceCapability.DOOR_CONTROL).length;
+      const doorControlCount = result.capabilities.filter(
+        (c) => c === DeviceCapability.DOOR_CONTROL
+      ).length;
       expect(doorControlCount).toBeGreaterThan(0);
     });
 
@@ -261,12 +252,7 @@ describe('toUnifiedDevice', () => {
       const deviceInfo: DeviceInfo = {
         deviceId: createDeviceId('device-012'),
         name: 'Advanced Sensor',
-        capabilities: [
-          'button',
-          'pressureMeasurement',
-          'soundSensor',
-          'occupancySensor',
-        ],
+        capabilities: ['button', 'pressureMeasurement', 'soundSensor', 'occupancySensor'],
       };
 
       const result = toUnifiedDevice(deviceInfo);
@@ -389,7 +375,12 @@ describe('toUnifiedDevice', () => {
 
       const result = toUnifiedDevice(deviceInfo);
 
-      expect(result.platformSpecific?.['components']).toEqual(['main', 'button1', 'button2', 'fan']);
+      expect(result.platformSpecific?.['components']).toEqual([
+        'main',
+        'button1',
+        'button2',
+        'fan',
+      ]);
     });
 
     it('preserves locationId and roomId in platformSpecific', () => {
@@ -680,10 +671,19 @@ describe('toUnifiedDevice', () => {
         deviceId: createDeviceId('device-many-caps'),
         name: 'Multi-Function Device',
         capabilities: [
-          'switch', 'switchLevel', 'colorControl', 'colorTemperature',
-          'temperatureMeasurement', 'relativeHumidityMeasurement',
-          'motionSensor', 'contactSensor', 'illuminanceMeasurement',
-          'battery', 'energyMeter', 'audioVolume', 'mediaPlayback',
+          'switch',
+          'switchLevel',
+          'colorControl',
+          'colorTemperature',
+          'temperatureMeasurement',
+          'relativeHumidityMeasurement',
+          'motionSensor',
+          'contactSensor',
+          'illuminanceMeasurement',
+          'battery',
+          'energyMeter',
+          'audioVolume',
+          'mediaPlayback',
         ],
       };
 
@@ -706,7 +706,7 @@ describe('toUnifiedDevice', () => {
 
       // Should have duplicates because we don't deduplicate
       // (caller can deduplicate if needed)
-      const switchCount = result.capabilities.filter(c => c === DeviceCapability.SWITCH).length;
+      const switchCount = result.capabilities.filter((c) => c === DeviceCapability.SWITCH).length;
       expect(switchCount).toBe(3);
     });
   });

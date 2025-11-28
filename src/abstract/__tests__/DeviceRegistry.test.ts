@@ -20,7 +20,8 @@ import { Platform as PlatformEnum } from '../../types/unified-device.js';
 
 // Test helper: Create mock device
 function createMockDevice(overrides?: Partial<UnifiedDevice>): UnifiedDevice {
-  const id = overrides?.id || createUniversalDeviceId(PlatformEnum.SMARTTHINGS, `device-${Math.random()}`);
+  const id =
+    overrides?.id || createUniversalDeviceId(PlatformEnum.SMARTTHINGS, `device-${Math.random()}`);
 
   return {
     id,
@@ -139,7 +140,9 @@ describe('DeviceRegistry', () => {
 
       registry.addDevice(device);
 
-      expect(() => registry.updateDevice(device.id, { id: newId })).toThrow('Cannot change device ID');
+      expect(() => registry.updateDevice(device.id, { id: newId })).toThrow(
+        'Cannot change device ID'
+      );
     });
 
     it('should throw error when setting empty name', () => {
@@ -147,7 +150,9 @@ describe('DeviceRegistry', () => {
 
       registry.addDevice(device);
 
-      expect(() => registry.updateDevice(device.id, { name: '' })).toThrow('Device name cannot be empty');
+      expect(() => registry.updateDevice(device.id, { name: '' })).toThrow(
+        'Device name cannot be empty'
+      );
     });
 
     it('should return false when updating non-existent device', () => {
@@ -161,16 +166,22 @@ describe('DeviceRegistry', () => {
   describe('Device Resolution', () => {
     beforeEach(() => {
       // Add test devices
-      registry.addDevice(createMockDevice({
-        name: 'Living Room Light',
-        label: 'LR Light',
-      }));
-      registry.addDevice(createMockDevice({
-        name: 'Kitchen Light',
-      }));
-      registry.addDevice(createMockDevice({
-        name: 'Bedroom Lamp',
-      }));
+      registry.addDevice(
+        createMockDevice({
+          name: 'Living Room Light',
+          label: 'LR Light',
+        })
+      );
+      registry.addDevice(
+        createMockDevice({
+          name: 'Kitchen Light',
+        })
+      );
+      registry.addDevice(
+        createMockDevice({
+          name: 'Bedroom Lamp',
+        })
+      );
     });
 
     it('should resolve by exact ID', () => {
@@ -227,44 +238,52 @@ describe('DeviceRegistry', () => {
   describe('Multi-Dimensional Queries', () => {
     beforeEach(() => {
       // Add diverse set of devices
-      registry.addDevice(createMockDevice({
-        name: 'Living Room Light',
-        room: 'Living Room',
-        platform: PlatformEnum.SMARTTHINGS,
-        capabilities: [CapabilityEnum.SWITCH, CapabilityEnum.DIMMER],
-        online: true,
-      }));
+      registry.addDevice(
+        createMockDevice({
+          name: 'Living Room Light',
+          room: 'Living Room',
+          platform: PlatformEnum.SMARTTHINGS,
+          capabilities: [CapabilityEnum.SWITCH, CapabilityEnum.DIMMER],
+          online: true,
+        })
+      );
 
-      registry.addDevice(createMockDevice({
-        name: 'Living Room Fan',
-        room: 'Living Room',
-        platform: PlatformEnum.SMARTTHINGS,
-        capabilities: [CapabilityEnum.SWITCH, CapabilityEnum.FAN],
-        online: true,
-      }));
+      registry.addDevice(
+        createMockDevice({
+          name: 'Living Room Fan',
+          room: 'Living Room',
+          platform: PlatformEnum.SMARTTHINGS,
+          capabilities: [CapabilityEnum.SWITCH, CapabilityEnum.FAN],
+          online: true,
+        })
+      );
 
-      registry.addDevice(createMockDevice({
-        name: 'Bedroom Light',
-        room: 'Bedroom',
-        platform: PlatformEnum.SMARTTHINGS,
-        capabilities: [CapabilityEnum.SWITCH],
-        online: false,
-      }));
+      registry.addDevice(
+        createMockDevice({
+          name: 'Bedroom Light',
+          room: 'Bedroom',
+          platform: PlatformEnum.SMARTTHINGS,
+          capabilities: [CapabilityEnum.SWITCH],
+          online: false,
+        })
+      );
 
-      registry.addDevice(createMockDevice({
-        name: 'Kitchen Sensor',
-        room: 'Kitchen',
-        platform: PlatformEnum.SMARTTHINGS,
-        capabilities: [CapabilityEnum.TEMPERATURE_SENSOR],
-        online: true,
-      }));
+      registry.addDevice(
+        createMockDevice({
+          name: 'Kitchen Sensor',
+          room: 'Kitchen',
+          platform: PlatformEnum.SMARTTHINGS,
+          capabilities: [CapabilityEnum.TEMPERATURE_SENSOR],
+          online: true,
+        })
+      );
     });
 
     it('should filter by room', () => {
       const devices = registry.findDevices({ roomId: 'Living Room' as any });
 
       expect(devices).toHaveLength(2);
-      expect(devices.every(d => d.room === 'Living Room')).toBe(true);
+      expect(devices.every((d) => d.room === 'Living Room')).toBe(true);
     });
 
     it('should filter by capability', () => {
@@ -284,14 +303,14 @@ describe('DeviceRegistry', () => {
       const devices = registry.findDevices({ online: true });
 
       expect(devices).toHaveLength(3);
-      expect(devices.every(d => d.online)).toBe(true);
+      expect(devices.every((d) => d.online)).toBe(true);
     });
 
     it('should filter by name pattern', () => {
       const devices = registry.findDevices({ namePattern: /Light/i });
 
       expect(devices).toHaveLength(2);
-      expect(devices.every(d => d.name.includes('Light'))).toBe(true);
+      expect(devices.every((d) => d.name.includes('Light'))).toBe(true);
     });
 
     it('should combine multiple filters (AND logic)', () => {
@@ -333,7 +352,7 @@ describe('DeviceRegistry', () => {
       const devices = registry.getDevicesInRoom('Living Room');
 
       expect(devices).toHaveLength(2);
-      expect(devices.every(d => d.room === 'Living Room')).toBe(true);
+      expect(devices.every((d) => d.room === 'Living Room')).toBe(true);
     });
 
     it('should return empty array for non-existent room', () => {
@@ -356,23 +375,29 @@ describe('DeviceRegistry', () => {
 
   describe('Registry Statistics', () => {
     beforeEach(() => {
-      registry.addDevice(createMockDevice({
-        room: 'Living Room',
-        platform: PlatformEnum.SMARTTHINGS,
-        capabilities: [CapabilityEnum.SWITCH, CapabilityEnum.DIMMER],
-      }));
+      registry.addDevice(
+        createMockDevice({
+          room: 'Living Room',
+          platform: PlatformEnum.SMARTTHINGS,
+          capabilities: [CapabilityEnum.SWITCH, CapabilityEnum.DIMMER],
+        })
+      );
 
-      registry.addDevice(createMockDevice({
-        room: 'Living Room',
-        platform: PlatformEnum.SMARTTHINGS,
-        capabilities: [CapabilityEnum.SWITCH],
-      }));
+      registry.addDevice(
+        createMockDevice({
+          room: 'Living Room',
+          platform: PlatformEnum.SMARTTHINGS,
+          capabilities: [CapabilityEnum.SWITCH],
+        })
+      );
 
-      registry.addDevice(createMockDevice({
-        room: 'Bedroom',
-        platform: PlatformEnum.SMARTTHINGS,
-        capabilities: [CapabilityEnum.TEMPERATURE_SENSOR],
-      }));
+      registry.addDevice(
+        createMockDevice({
+          room: 'Bedroom',
+          platform: PlatformEnum.SMARTTHINGS,
+          capabilities: [CapabilityEnum.TEMPERATURE_SENSOR],
+        })
+      );
     });
 
     it('should calculate correct device count', () => {
@@ -507,13 +532,15 @@ describe('DeviceRegistry', () => {
     it('should handle complex queries on 200+ devices efficiently', () => {
       // Add 200 diverse devices
       for (let i = 0; i < 200; i++) {
-        registry.addDevice(createMockDevice({
-          name: `Device ${i}`,
-          room: `Room ${i % 10}`,
-          platform: PlatformEnum.SMARTTHINGS,
-          capabilities: i % 2 === 0 ? [CapabilityEnum.SWITCH] : [CapabilityEnum.DIMMER],
-          online: i % 3 !== 0,
-        }));
+        registry.addDevice(
+          createMockDevice({
+            name: `Device ${i}`,
+            room: `Room ${i % 10}`,
+            platform: PlatformEnum.SMARTTHINGS,
+            capabilities: i % 2 === 0 ? [CapabilityEnum.SWITCH] : [CapabilityEnum.DIMMER],
+            online: i % 3 !== 0,
+          })
+        );
       }
 
       // Test complex query performance
@@ -536,9 +563,11 @@ describe('DeviceRegistry', () => {
     it('should handle fuzzy matching on large dataset efficiently', () => {
       // Add 200 devices with varied names
       for (let i = 0; i < 200; i++) {
-        registry.addDevice(createMockDevice({
-          name: `Living Room Device ${i}`,
-        }));
+        registry.addDevice(
+          createMockDevice({
+            name: `Living Room Device ${i}`,
+          })
+        );
       }
 
       // Test fuzzy matching performance

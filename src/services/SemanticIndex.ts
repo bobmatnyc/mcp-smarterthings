@@ -212,7 +212,9 @@ export class SemanticIndex {
       logger.error('Failed to initialize SemanticIndex', {
         error: error instanceof Error ? error.message : String(error),
       });
-      throw new Error(`SemanticIndex initialization failed: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `SemanticIndex initialization failed: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 
@@ -344,7 +346,7 @@ export class SemanticIndex {
       const results = await this.collection.query({
         queryTexts: [query],
         nResults: limit,
-        where: where as any,
+        where: where,
       });
 
       // Format results
@@ -467,7 +469,9 @@ export class SemanticIndex {
           await this.indexDevices(metadataDocs);
           result.added = toAdd.length;
         } catch (error) {
-          result.errors.push(`Failed to add ${toAdd.length} devices: ${error instanceof Error ? error.message : String(error)}`);
+          result.errors.push(
+            `Failed to add ${toAdd.length} devices: ${error instanceof Error ? error.message : String(error)}`
+          );
         }
       }
 
@@ -477,7 +481,9 @@ export class SemanticIndex {
           await this.removeDevice(deviceId);
           result.removed++;
         } catch (error) {
-          result.errors.push(`Failed to remove ${deviceId}: ${error instanceof Error ? error.message : String(error)}`);
+          result.errors.push(
+            `Failed to remove ${deviceId}: ${error instanceof Error ? error.message : String(error)}`
+          );
         }
       }
 
@@ -496,7 +502,9 @@ export class SemanticIndex {
     } catch (error) {
       result.errors.push(`Sync failed: ${error instanceof Error ? error.message : String(error)}`);
       result.durationMs = Date.now() - startTime;
-      logger.error('Registry sync failed', { error: error instanceof Error ? error.message : String(error) });
+      logger.error('Registry sync failed', {
+        error: error instanceof Error ? error.message : String(error),
+      });
       return result;
     }
   }
@@ -634,7 +642,10 @@ export class SemanticIndex {
    * @param options Search options
    * @returns Search results
    */
-  private async fallbackSearch(query: string, options: SearchOptions = {}): Promise<DeviceSearchResult[]> {
+  private async fallbackSearch(
+    query: string,
+    options: SearchOptions = {}
+  ): Promise<DeviceSearchResult[]> {
     if (!this.deviceRegistry) {
       logger.warn('No DeviceRegistry available for fallback search');
       return [];
@@ -789,9 +800,7 @@ function generateDeviceTags(device: UnifiedDevice): string[] {
   }
 
   // Sensor vs controller tags
-  const hasSensor = device.capabilities.some((cap) =>
-    cap.includes('Sensor') || cap === 'battery'
-  );
+  const hasSensor = device.capabilities.some((cap) => cap.includes('Sensor') || cap === 'battery');
   const hasControl = device.capabilities.some((cap) =>
     ['switch', 'dimmer', 'thermostat', 'lock'].includes(cap)
   );

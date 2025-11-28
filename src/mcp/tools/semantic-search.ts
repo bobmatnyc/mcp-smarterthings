@@ -40,30 +40,21 @@ export const semanticSearchDevicesSchema = z.object({
     .default(10)
     .describe('Maximum number of results to return (default: 10, max: 100)'),
 
-  roomId: z
-    .string()
-    .optional()
-    .describe('Filter results by room ID'),
+  roomId: z.string().optional().describe('Filter results by room ID'),
 
   capabilities: z
     .array(z.string())
     .optional()
     .describe('Filter by device capabilities (e.g., ["switch", "dimmer"])'),
 
-  platform: z
-    .string()
-    .optional()
-    .describe('Filter by platform (e.g., "smartthings", "tuya")'),
+  platform: z.string().optional().describe('Filter by platform (e.g., "smartthings", "tuya")'),
 
   online: z
     .boolean()
     .optional()
     .describe('Filter by online status (true = online only, false = offline only)'),
 
-  tags: z
-    .array(z.string())
-    .optional()
-    .describe('Filter by device tags'),
+  tags: z.array(z.string()).optional().describe('Filter by device tags'),
 
   minSimilarity: z
     .number()
@@ -208,7 +199,7 @@ export async function semanticSearchDevices(
       devices,
       totalResults: devices.length,
       query: input.query,
-      filters: Object.keys(filters).length > 0 ? filters as any : undefined,
+      filters: Object.keys(filters).length > 0 ? (filters as any) : undefined,
       metadata: {
         searchMethod: 'semantic',
         minSimilarity: input.minSimilarity,

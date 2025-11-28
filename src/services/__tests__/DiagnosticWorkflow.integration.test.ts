@@ -49,16 +49,12 @@ describe('DiagnosticWorkflow Integration Tests', () => {
     // Check for required environment variables
     const pat = process.env['SMARTTHINGS_PAT'];
     if (!pat) {
-      throw new Error(
-        'SMARTTHINGS_PAT environment variable required for integration tests'
-      );
+      throw new Error('SMARTTHINGS_PAT environment variable required for integration tests');
     }
 
     const openrouterApiKey = process.env['OPENROUTER_API_KEY'];
     if (!openrouterApiKey) {
-      throw new Error(
-        'OPENROUTER_API_KEY environment variable required for integration tests'
-      );
+      throw new Error('OPENROUTER_API_KEY environment variable required for integration tests');
     }
 
     // Initialize services
@@ -94,11 +90,7 @@ describe('DiagnosticWorkflow Integration Tests', () => {
     console.log(`Indexed ${devices.length} devices`);
 
     // Initialize workflow
-    workflow = new DiagnosticWorkflow(
-      semanticIndex,
-      deviceService,
-      deviceRegistry
-    );
+    workflow = new DiagnosticWorkflow(semanticIndex, deviceService, deviceRegistry);
 
     console.log('DiagnosticWorkflow integration test setup complete');
   }, INTEGRATION_TEST_TIMEOUT);
@@ -122,8 +114,7 @@ describe('DiagnosticWorkflow Integration Tests', () => {
       const startTime = Date.now();
 
       // Step 1: Classify intent
-      const classification: IntentClassification =
-        await intentClassifier.classifyIntent(query);
+      const classification: IntentClassification = await intentClassifier.classifyIntent(query);
       const classifyTime = Date.now() - startTime;
 
       console.log(`Intent classification: ${classifyTime}ms`);
@@ -136,10 +127,7 @@ describe('DiagnosticWorkflow Integration Tests', () => {
 
       // Step 2: Execute workflow
       const workflowStart = Date.now();
-      const report = await workflow.executeDiagnosticWorkflow(
-        classification,
-        query
-      );
+      const report = await workflow.executeDiagnosticWorkflow(classification, query);
       const workflowTime = Date.now() - workflowStart;
 
       const totalTime = Date.now() - startTime;
@@ -191,8 +179,7 @@ describe('DiagnosticWorkflow Integration Tests', () => {
       const startTime = Date.now();
 
       // Step 1: Classify intent
-      const classification: IntentClassification =
-        await intentClassifier.classifyIntent(query);
+      const classification: IntentClassification = await intentClassifier.classifyIntent(query);
       const classifyTime = Date.now() - startTime;
 
       console.log(`Intent classification: ${classifyTime}ms`);
@@ -205,10 +192,7 @@ describe('DiagnosticWorkflow Integration Tests', () => {
 
       // Step 2: Execute workflow
       const workflowStart = Date.now();
-      const report = await workflow.executeDiagnosticWorkflow(
-        classification,
-        query
-      );
+      const report = await workflow.executeDiagnosticWorkflow(classification, query);
       const workflowTime = Date.now() - workflowStart;
 
       const totalTime = Date.now() - startTime;
@@ -216,24 +200,16 @@ describe('DiagnosticWorkflow Integration Tests', () => {
       console.log(`Workflow execution: ${workflowTime}ms`);
       console.log(`Total time: ${totalTime}ms`);
       console.log(`Device resolved: ${report.diagnosticContext.device?.label || 'N/A'}`);
-      console.log(
-        `Device ID: ${report.diagnosticContext.device?.id || 'N/A'}`
-      );
-      console.log(
-        `Recent events: ${report.diagnosticContext.recentEvents?.length || 0}`
-      );
-      console.log(
-        `Similar devices: ${report.diagnosticContext.similarDevices?.length || 0}`
-      );
+      console.log(`Device ID: ${report.diagnosticContext.device?.id || 'N/A'}`);
+      console.log(`Recent events: ${report.diagnosticContext.recentEvents?.length || 0}`);
+      console.log(`Similar devices: ${report.diagnosticContext.similarDevices?.length || 0}`);
       console.log(`Recommendations: ${report.recommendations.length}`);
 
       // Log recent events summary
       if (report.diagnosticContext.recentEvents) {
         console.log('\nRecent events (last 5):');
         report.diagnosticContext.recentEvents.slice(0, 5).forEach((event) => {
-          console.log(
-            `  ${event.time}: ${event.capability}.${event.attribute} = ${event.value}`
-          );
+          console.log(`  ${event.time}: ${event.capability}.${event.attribute} = ${event.value}`);
         });
       }
 
@@ -276,8 +252,7 @@ describe('DiagnosticWorkflow Integration Tests', () => {
       const startTime = Date.now();
 
       // Step 1: Classify intent
-      const classification: IntentClassification =
-        await intentClassifier.classifyIntent(query);
+      const classification: IntentClassification = await intentClassifier.classifyIntent(query);
       const classifyTime = Date.now() - startTime;
 
       console.log(`Intent classification: ${classifyTime}ms`);
@@ -290,19 +265,14 @@ describe('DiagnosticWorkflow Integration Tests', () => {
 
       // Step 2: Execute workflow
       const workflowStart = Date.now();
-      const report = await workflow.executeDiagnosticWorkflow(
-        classification,
-        query
-      );
+      const report = await workflow.executeDiagnosticWorkflow(classification, query);
       const workflowTime = Date.now() - workflowStart;
 
       const totalTime = Date.now() - startTime;
 
       console.log(`Workflow execution: ${workflowTime}ms`);
       console.log(`Total time: ${totalTime}ms`);
-      console.log(
-        `System status: ${report.diagnosticContext.systemStatus ? '✅' : '❌'}`
-      );
+      console.log(`System status: ${report.diagnosticContext.systemStatus ? '✅' : '❌'}`);
 
       if (report.diagnosticContext.systemStatus) {
         const status = report.diagnosticContext.systemStatus;
@@ -317,9 +287,7 @@ describe('DiagnosticWorkflow Integration Tests', () => {
 
       // Assertions
       expect(report.diagnosticContext.systemStatus).toBeDefined();
-      expect(report.diagnosticContext.systemStatus!.totalDevices).toBeGreaterThan(
-        0
-      );
+      expect(report.diagnosticContext.systemStatus!.totalDevices).toBeGreaterThan(0);
       expect(report.recommendations).toBeInstanceOf(Array);
       expect(report.richContext).toBeTruthy();
 
@@ -362,10 +330,7 @@ describe('DiagnosticWorkflow Integration Tests', () => {
 
       // 3. Workflow execution
       start = Date.now();
-      const report = await workflow.executeDiagnosticWorkflow(
-        classification,
-        query
-      );
+      const report = await workflow.executeDiagnosticWorkflow(classification, query);
       timings['workflowExecution'] = Date.now() - start;
       console.log(`Workflow execution: ${timings['workflowExecution']}ms`);
 
@@ -384,9 +349,7 @@ describe('DiagnosticWorkflow Integration Tests', () => {
       console.log(
         `  Workflow execution: ${timings['workflowExecution']}ms (target: <400ms) ${timings['workflowExecution'] < 400 ? '✅' : '⚠️'}`
       );
-      console.log(
-        `  Total: ${total}ms (target: <500ms) ${total < 500 ? '✅' : '⚠️'}`
-      );
+      console.log(`  Total: ${total}ms (target: <500ms) ${total < 500 ? '✅' : '⚠️'}`);
 
       expect(report).toBeDefined();
       expect(total).toBeLessThan(5000); // Relaxed for integration tests
@@ -415,10 +378,7 @@ describe('DiagnosticWorkflow Integration Tests', () => {
       };
 
       const startTime = Date.now();
-      const report = await workflow.executeDiagnosticWorkflow(
-        classification,
-        query
-      );
+      const report = await workflow.executeDiagnosticWorkflow(classification, query);
       const elapsed = Date.now() - startTime;
 
       console.log(`Workflow completed in ${elapsed}ms`);

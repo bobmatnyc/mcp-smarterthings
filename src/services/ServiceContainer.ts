@@ -47,18 +47,25 @@
  * @module services/ServiceContainer
  */
 
-import type { IDeviceService, ILocationService, ISceneService } from './interfaces.js';
+import type {
+  IDeviceService,
+  ILocationService,
+  ISceneService,
+  IAutomationService,
+} from './interfaces.js';
 import { DeviceService } from './DeviceService.js';
 import { LocationService } from './LocationService.js';
 import { SceneService } from './SceneService.js';
+import { AutomationService } from './AutomationService.js';
 import type { SmartThingsService } from '../smartthings/client.js';
+import type { SmartThingsAdapter } from '../platforms/smartthings/SmartThingsAdapter.js';
 import { RetryPolicyManager, type CircuitBreakerStatus } from './errors/RetryPolicy.js';
 import logger from '../utils/logger.js';
 
 /**
  * Service type identifiers for registration and lookup.
  */
-export type ServiceType = 'device' | 'location' | 'scene';
+export type ServiceType = 'device' | 'location' | 'scene' | 'automation';
 
 /**
  * Service map containing all available services.
@@ -67,6 +74,7 @@ export interface ServiceMap {
   deviceService: IDeviceService;
   locationService: ILocationService;
   sceneService: ISceneService;
+  automationService: IAutomationService;
 }
 
 /**
@@ -140,14 +148,19 @@ export class ServiceContainer {
   private deviceService?: IDeviceService;
   private locationService?: ILocationService;
   private sceneService?: ISceneService;
+  private automationService?: IAutomationService;
   private initialized = false;
 
   /**
    * Create a new ServiceContainer.
    *
    * @param smartThingsService SmartThingsService instance for operations
+   * @param smartThingsAdapter Optional SmartThingsAdapter for automation operations
    */
-  constructor(private readonly smartThingsService: SmartThingsService) {}
+  constructor(
+    private readonly smartThingsService: SmartThingsService,
+    private readonly smartThingsAdapter?: SmartThingsAdapter
+  ) {}
 
   /**
    * Get DeviceService instance (singleton).
@@ -201,6 +214,30 @@ export class ServiceContainer {
   }
 
   /**
+   * Get AutomationService instance (singleton).
+   *
+   * Creates AutomationService on first access and reuses for subsequent calls.
+   * Requires SmartThingsAdapter to be provided in constructor.
+   *
+   * Dependencies:
+   * - SmartThingsAdapter (for Rules API operations)
+   *
+   * @returns IAutomationService implementation
+   * @throws Error if SmartThingsAdapter not provided
+   */
+  getAutomationService(): IAutomationService {
+    if (!this.automationService) {
+      if (!this.smartThingsAdapter) {
+        throw new Error(
+          'AutomationService requires SmartThingsAdapter - provide adapter in ServiceContainer constructor'
+        );
+      }
+      this.automationService = new AutomationService(this.smartThingsAdapter);
+    }
+    return this.automationService;
+  }
+
+  /**
    * Initialize all services.
    *
    * Triggers lazy initialization of all services.
@@ -219,6 +256,11 @@ export class ServiceContainer {
     this.getLocationService();
     this.getSceneService();
 
+    // Initialize AutomationService if adapter available
+    if (this.smartThingsAdapter) {
+      this.getAutomationService();
+    }
+
     this.initialized = true;
   }
 
@@ -236,6 +278,7 @@ export class ServiceContainer {
     this.deviceService = undefined;
     this.locationService = undefined;
     this.sceneService = undefined;
+    this.automationService = undefined;
     this.initialized = false;
   }
 
@@ -245,7 +288,7 @@ export class ServiceContainer {
    * Validates that all services can communicate with their dependencies.
    * Useful for startup validation and monitoring.
    *
-   * Performance: O(1) for each service = O(3) total
+   * Performance: O(1) for each service = O(4) total
    * Network: Makes test API calls to verify connectivity
    *
    * @returns Promise resolving to health check results
@@ -256,6 +299,7 @@ export class ServiceContainer {
       device: { healthy: false, timestamp },
       location: { healthy: false, timestamp },
       scene: { healthy: false, timestamp },
+      automation: { healthy: false, timestamp },
     };
 
     // Check DeviceService health
@@ -297,8 +341,33 @@ export class ServiceContainer {
       };
     }
 
+    // Check AutomationService health (if available)
+    if (this.smartThingsAdapter) {
+      try {
+        this.getAutomationService(); // Trigger creation to verify adapter works
+        // Note: We can't easily test without a location ID, so we just check service creation
+        services.automation = { healthy: true, timestamp };
+      } catch (error) {
+        services.automation = {
+          healthy: false,
+          message: error instanceof Error ? error.message : 'Unknown error',
+          timestamp,
+        };
+      }
+    } else {
+      services.automation = {
+        healthy: true,
+        message: 'AutomationService not configured (optional)',
+        timestamp,
+      };
+    }
+
     // Overall health is healthy only if all services are healthy
-    const healthy = services.device.healthy && services.location.healthy && services.scene.healthy;
+    const healthy =
+      services.device.healthy &&
+      services.location.healthy &&
+      services.scene.healthy &&
+      services.automation.healthy;
 
     return { healthy, services, timestamp };
   }
@@ -311,11 +380,13 @@ export class ServiceContainer {
    * @returns Object containing all service instances
    */
   getAllServices(): ServiceMap {
-    return {
+    const services: ServiceMap = {
       deviceService: this.getDeviceService(),
       locationService: this.getLocationService(),
       sceneService: this.getSceneService(),
+      automationService: this.getAutomationService(), // Will throw if adapter not provided
     };
+    return services;
   }
 
   /**
@@ -325,17 +396,22 @@ export class ServiceContainer {
    * Unlike the singleton pattern, this allows multiple independent containers.
    *
    * @param smartThingsService SmartThingsService instance (can be mock)
+   * @param smartThingsAdapter Optional SmartThingsAdapter instance (can be mock)
    * @returns New ServiceContainer instance
    *
    * @example
    * ```typescript
    * // Create test instance with mocks
    * const mockService = createMock<SmartThingsService>();
-   * const container = ServiceContainer.createInstance(mockService);
+   * const mockAdapter = createMock<SmartThingsAdapter>();
+   * const container = ServiceContainer.createInstance(mockService, mockAdapter);
    * ```
    */
-  static createInstance(smartThingsService: SmartThingsService): ServiceContainer {
-    return new ServiceContainer(smartThingsService);
+  static createInstance(
+    smartThingsService: SmartThingsService,
+    smartThingsAdapter?: SmartThingsAdapter
+  ): ServiceContainer {
+    return new ServiceContainer(smartThingsService, smartThingsAdapter);
   }
 
   /**
@@ -356,7 +432,9 @@ export class ServiceContainer {
    * @returns Service instance
    * @throws Error if service type is invalid
    */
-  getService(serviceType: ServiceType): IDeviceService | ILocationService | ISceneService {
+  getService(
+    serviceType: ServiceType
+  ): IDeviceService | ILocationService | ISceneService | IAutomationService {
     switch (serviceType) {
       case 'device':
         return this.getDeviceService();
@@ -364,6 +442,8 @@ export class ServiceContainer {
         return this.getLocationService();
       case 'scene':
         return this.getSceneService();
+      case 'automation':
+        return this.getAutomationService();
       default:
         throw new Error(`Unknown service type: ${serviceType}`);
     }
@@ -394,6 +474,7 @@ export class ServiceContainer {
       device: this.getServiceErrorStats('DeviceService'),
       location: this.getServiceErrorStats('LocationService'),
       scene: this.getServiceErrorStats('SceneService'),
+      automation: this.getServiceErrorStats('AutomationService'),
     };
 
     const totalErrors = Object.values(services).reduce((sum, stats) => sum + stats.totalErrors, 0);
@@ -497,6 +578,8 @@ export class ServiceContainer {
         return 'LocationService';
       case 'scene':
         return 'SceneService';
+      case 'automation':
+        return 'AutomationService';
       default:
         throw new Error(`Unknown service type: ${serviceType}`);
     }

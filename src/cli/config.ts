@@ -246,14 +246,12 @@ class ConfigMenu {
     console.log(chalk.gray('  2. Click "Generate new token"'));
     console.log(chalk.gray('  3. Give it a name (e.g., "MCP Server")'));
     console.log(chalk.gray('  4. Select scopes: devices, locations, scenes'));
-    console.log(chalk.gray('  5. Copy the token (you won\'t see it again!)'));
+    console.log(chalk.gray("  5. Copy the token (you won't see it again!)"));
     console.log();
 
     const current = this.config.get('SMARTTHINGS_PAT');
     if (current) {
-      console.log(
-        chalk.yellow('Current PAT: ') + chalk.gray(ConfigManager.maskValue(current))
-      );
+      console.log(chalk.yellow('Current PAT: ') + chalk.gray(ConfigManager.maskValue(current)));
     }
 
     const token = await this.rl.question(
@@ -305,9 +303,7 @@ class ConfigMenu {
 
     const current = this.config.get('OPENROUTER_API_KEY');
     if (current) {
-      console.log(
-        chalk.yellow('Current Key: ') + chalk.gray(ConfigManager.maskValue(current))
-      );
+      console.log(chalk.yellow('Current Key: ') + chalk.gray(ConfigManager.maskValue(current)));
     }
 
     const apiKey = await this.rl.question(
@@ -379,9 +375,7 @@ class ConfigMenu {
       this.displayMenu();
       this.displayStatus();
 
-      const choice = await this.rl.question(
-        chalk.white('\n👉 Select an option: ')
-      );
+      const choice = await this.rl.question(chalk.white('\n👉 Select an option: '));
 
       switch (choice.trim()) {
         case '1':

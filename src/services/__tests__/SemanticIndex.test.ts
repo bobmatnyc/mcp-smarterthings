@@ -58,7 +58,10 @@ describe('SemanticIndex', () => {
     name: `Test Device ${id}`,
     label: `Device ${id}`,
     room: 'Living Room',
-    capabilities: [DeviceCapability.SWITCH, DeviceCapability.TEMPERATURE_SENSOR] as ReadonlyArray<DeviceCapability>,
+    capabilities: [
+      DeviceCapability.SWITCH,
+      DeviceCapability.TEMPERATURE_SENSOR,
+    ] as ReadonlyArray<DeviceCapability>,
     online: true,
     manufacturer: 'Samsung',
     model: 'SmartThings Sensor',
@@ -92,7 +95,9 @@ describe('SemanticIndex', () => {
       });
 
       const failingIndex = new SemanticIndex();
-      await expect(failingIndex.initialize()).rejects.toThrow('SemanticIndex initialization failed');
+      await expect(failingIndex.initialize()).rejects.toThrow(
+        'SemanticIndex initialization failed'
+      );
 
       const stats = await failingIndex.getStats();
       expect(stats.healthy).toBe(false);
@@ -148,7 +153,10 @@ describe('SemanticIndex', () => {
         name: 'Living Room Motion Sensor',
         label: 'Living Room Motion Sensor',
         room: 'Living Room',
-        capabilities: [DeviceCapability.MOTION_SENSOR, DeviceCapability.BATTERY] as ReadonlyArray<DeviceCapability>,
+        capabilities: [
+          DeviceCapability.MOTION_SENSOR,
+          DeviceCapability.BATTERY,
+        ] as ReadonlyArray<DeviceCapability>,
         manufacturer: 'Samsung',
         model: 'SmartThings Motion Sensor',
       });
@@ -213,7 +221,10 @@ describe('SemanticIndex', () => {
         createTestDevice('switch1', {
           name: 'Kitchen Light Switch',
           room: 'Kitchen',
-          capabilities: [DeviceCapability.SWITCH, DeviceCapability.DIMMER] as ReadonlyArray<DeviceCapability>,
+          capabilities: [
+            DeviceCapability.SWITCH,
+            DeviceCapability.DIMMER,
+          ] as ReadonlyArray<DeviceCapability>,
         }),
       ];
 
@@ -235,14 +246,18 @@ describe('SemanticIndex', () => {
         embeddings: [[null]],
         include: ['metadatas', 'documents', 'distances'],
         uris: [[null]],
-        rows: () => [[{
-          ids: 'smartthings:motion1',
-          distances: 0.2,
-          metadatas: { name: 'Living Room Motion Sensor', capabilities: ['motionSensor'] },
-          documents: 'Living Room Motion Sensor, detects motion',
-          embeddings: null,
-          uris: null,
-        }]],
+        rows: () => [
+          [
+            {
+              ids: 'smartthings:motion1',
+              distances: 0.2,
+              metadatas: { name: 'Living Room Motion Sensor', capabilities: ['motionSensor'] },
+              documents: 'Living Room Motion Sensor, detects motion',
+              embeddings: null,
+              uris: null,
+            },
+          ],
+        ],
       } as any);
 
       const results = await semanticIndex.searchDevices('motion sensors');
@@ -261,7 +276,15 @@ describe('SemanticIndex', () => {
       vi.mocked(mockCollection.query).mockResolvedValue({
         ids: [['smartthings:temp1']],
         distances: [[0.3]],
-        metadatas: [[{ name: 'Bedroom Temperature Sensor', room: 'Bedroom', capabilities: ['temperatureSensor'] }]],
+        metadatas: [
+          [
+            {
+              name: 'Bedroom Temperature Sensor',
+              room: 'Bedroom',
+              capabilities: ['temperatureSensor'],
+            },
+          ],
+        ],
         documents: [['Bedroom Temperature Sensor, located in Bedroom, measures temperature']],
         embeddings: [[null]],
         include: ['metadatas', 'documents', 'distances'],
@@ -618,7 +641,10 @@ describe('createDeviceMetadataDocument', () => {
       name: 'Living Room Motion Sensor',
       label: 'Motion Sensor',
       room: 'Living Room',
-      capabilities: [DeviceCapability.MOTION_SENSOR, DeviceCapability.BATTERY] as ReadonlyArray<DeviceCapability>,
+      capabilities: [
+        DeviceCapability.MOTION_SENSOR,
+        DeviceCapability.BATTERY,
+      ] as ReadonlyArray<DeviceCapability>,
       online: true,
       manufacturer: 'Samsung',
       model: 'SmartThings Sensor',

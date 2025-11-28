@@ -9,21 +9,29 @@
  * - Expected: System identifies controlling automation by name
  */
 
+import 'dotenv/config';
 import { DiagnosticWorkflow } from './src/services/DiagnosticWorkflow.js';
 import { ServiceContainer } from './src/services/ServiceContainer.js';
 import { smartThingsService } from './src/smartthings/client.js';
 import { SmartThingsAdapter } from './src/platforms/smartthings/SmartThingsAdapter.js';
-import { createLogger } from './src/utils/logger.js';
+import logger from './src/utils/logger.js';
 import type { IntentClassification } from './src/services/IntentClassifier.js';
-
-const logger = createLogger('automation-integration-test');
 
 async function testAutomationIdentification() {
   try {
     logger.info('Starting automation identification integration test...');
 
     // Setup: Create ServiceContainer with SmartThingsAdapter for AutomationService
-    const adapter = new SmartThingsAdapter(smartThingsService);
+    const token = process.env.SMARTTHINGS_TOKEN;
+    if (!token) {
+      throw new Error('SMARTTHINGS_TOKEN environment variable is required');
+    }
+
+    const adapter = new SmartThingsAdapter({ token });
+
+    // Initialize adapter first (required for AutomationService)
+    await adapter.initialize();
+
     const serviceContainer = new ServiceContainer(smartThingsService, adapter);
 
     // Initialize services

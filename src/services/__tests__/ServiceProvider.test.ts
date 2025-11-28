@@ -224,6 +224,7 @@ describe('CustomServiceProvider', () => {
       device: mockDeviceFactory,
       location: mockLocationFactory,
       scene: mockSceneFactory,
+      automation: vi.fn().mockResolvedValue({} as any), // Placeholder for tests
     });
   });
 

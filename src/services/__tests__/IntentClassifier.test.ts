@@ -250,10 +250,7 @@ describe('IntentClassifier', () => {
         finished: true,
       });
 
-      const context = [
-        'user: my light is flickering',
-        'assistant: I can help diagnose that',
-      ];
+      const context = ['user: my light is flickering', 'assistant: I can help diagnose that'];
 
       await classifier.classifyIntent('yes, the bedroom one', context);
 

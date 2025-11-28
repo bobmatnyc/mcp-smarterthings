@@ -194,6 +194,12 @@ export class ServiceProvider implements IServiceProvider {
       deviceService: await this.getService<IDeviceService>('device'),
       locationService: await this.getService<ILocationService>('location'),
       sceneService: await this.getService<ISceneService>('scene'),
+      // AutomationService not available in ServiceProvider (requires SmartThingsAdapter)
+      get automationService(): never {
+        throw new Error(
+          'AutomationService not available via ServiceProvider - use ServiceContainer with SmartThingsAdapter'
+        );
+      },
     };
   }
 
@@ -340,6 +346,12 @@ export class CustomServiceProvider implements IServiceProvider {
       deviceService: await this.getService<IDeviceService>('device'),
       locationService: await this.getService<ILocationService>('location'),
       sceneService: await this.getService<ISceneService>('scene'),
+      // AutomationService not available in ServiceProvider (requires SmartThingsAdapter)
+      get automationService(): never {
+        throw new Error(
+          'AutomationService not available via ServiceProvider - use ServiceContainer with SmartThingsAdapter'
+        );
+      },
     };
   }
 

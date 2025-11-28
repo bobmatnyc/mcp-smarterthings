@@ -92,11 +92,7 @@ describe('DiagnosticWorkflow - Pattern Detection', () => {
     mockDevice = createMockDevice('device-123', 'Test Device');
     vi.mocked(mockDeviceRegistry.getDevice).mockReturnValue(mockDevice);
 
-    workflow = new DiagnosticWorkflow(
-      mockSemanticIndex,
-      mockDeviceService,
-      mockDeviceRegistry
-    );
+    workflow = new DiagnosticWorkflow(mockSemanticIndex, mockDeviceService, mockDeviceRegistry);
   });
 
   describe('TC-1: Detect Rapid State Changes', () => {
@@ -247,10 +243,7 @@ describe('DiagnosticWorkflow - Pattern Detection', () => {
         requiresDiagnostics: true,
       };
 
-      const report = await workflow.executeDiagnosticWorkflow(
-        classification,
-        'device offline?'
-      );
+      const report = await workflow.executeDiagnosticWorkflow(classification, 'device offline?');
 
       const connectivityPattern = report.diagnosticContext.relatedIssues!.find(
         (issue) => issue.type === 'connectivity_gap'
@@ -301,10 +294,7 @@ describe('DiagnosticWorkflow - Pattern Detection', () => {
         requiresDiagnostics: true,
       };
 
-      const report = await workflow.executeDiagnosticWorkflow(
-        classification,
-        'how is my device?'
-      );
+      const report = await workflow.executeDiagnosticWorkflow(classification, 'how is my device?');
 
       expect(report.diagnosticContext.relatedIssues).toBeDefined();
       expect(report.diagnosticContext.relatedIssues!.length).toBeGreaterThan(0);
@@ -344,10 +334,7 @@ describe('DiagnosticWorkflow - Pattern Detection', () => {
         requiresDiagnostics: true,
       };
 
-      const report = await workflow.executeDiagnosticWorkflow(
-        classification,
-        'check device'
-      );
+      const report = await workflow.executeDiagnosticWorkflow(classification, 'check device');
 
       expect(report.diagnosticContext.relatedIssues).toBeDefined();
       // Should return normal pattern for empty events
@@ -388,10 +375,7 @@ describe('DiagnosticWorkflow - Pattern Detection', () => {
         requiresDiagnostics: true,
       };
 
-      const report = await workflow.executeDiagnosticWorkflow(
-        classification,
-        'check device'
-      );
+      const report = await workflow.executeDiagnosticWorkflow(classification, 'check device');
 
       expect(report.diagnosticContext.relatedIssues).toBeDefined();
       // Should not crash, return normal pattern
@@ -476,10 +460,7 @@ describe('DiagnosticWorkflow - Pattern Detection', () => {
         requiresDiagnostics: true,
       };
 
-      const report = await workflow.executeDiagnosticWorkflow(
-        classification,
-        'device flickering'
-      );
+      const report = await workflow.executeDiagnosticWorkflow(classification, 'device flickering');
 
       const rapidPattern = report.diagnosticContext.relatedIssues!.find(
         (issue) => issue.type === 'rapid_changes'
@@ -491,9 +472,7 @@ describe('DiagnosticWorkflow - Pattern Detection', () => {
 
       // Should have automation loop warning (>5 occurrences)
       expect(report.recommendations.length).toBeGreaterThan(0);
-      expect(
-        report.recommendations.some((r) => r.toLowerCase().includes('loop'))
-      ).toBe(true);
+      expect(report.recommendations.some((r) => r.toLowerCase().includes('loop'))).toBe(true);
     });
   });
 
@@ -549,10 +528,7 @@ describe('DiagnosticWorkflow - Pattern Detection', () => {
         requiresDiagnostics: true,
       };
 
-      const report = await workflow.executeDiagnosticWorkflow(
-        classification,
-        'check device'
-      );
+      const report = await workflow.executeDiagnosticWorkflow(classification, 'check device');
 
       // Pattern detection should focus on switch events only
       expect(report.diagnosticContext.relatedIssues).toBeDefined();
@@ -623,11 +599,7 @@ describe('DiagnosticWorkflow - Pattern Detection', () => {
 
       // Should recommend checking automations
       expect(report.recommendations.length).toBeGreaterThan(0);
-      expect(
-        report.recommendations.some((r) =>
-          r.toLowerCase().includes('automation')
-        )
-      ).toBe(true);
+      expect(report.recommendations.some((r) => r.toLowerCase().includes('automation'))).toBe(true);
     });
   });
 
@@ -677,14 +649,10 @@ describe('DiagnosticWorkflow - Pattern Detection', () => {
       );
 
       expect(report.recommendations.length).toBeGreaterThan(0);
-      expect(
-        report.recommendations.some((r) =>
-          r.toLowerCase().includes('smartthings')
-        )
-      ).toBe(true);
-      expect(
-        report.recommendations.some((r) => r.toLowerCase().includes('automation'))
-      ).toBe(true);
+      expect(report.recommendations.some((r) => r.toLowerCase().includes('smartthings'))).toBe(
+        true
+      );
+      expect(report.recommendations.some((r) => r.toLowerCase().includes('automation'))).toBe(true);
     });
   });
 
@@ -745,10 +713,7 @@ describe('DiagnosticWorkflow - Pattern Detection', () => {
         requiresDiagnostics: true,
       };
 
-      const report = await workflow.executeDiagnosticWorkflow(
-        classification,
-        'check device'
-      );
+      const report = await workflow.executeDiagnosticWorkflow(classification, 'check device');
 
       // Should return report with empty patterns, not crash
       expect(report).toBeDefined();

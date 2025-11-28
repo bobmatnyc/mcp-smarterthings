@@ -156,7 +156,11 @@ describe('DeviceService.getDeviceEvents', () => {
         metadata: {
           totalCount: 2,
           hasMore: false,
-          dateRange: { earliest: '2025-11-27T12:00:00Z', latest: '2025-11-27T12:01:00Z', durationMs: 60000 },
+          dateRange: {
+            earliest: '2025-11-27T12:00:00Z',
+            latest: '2025-11-27T12:01:00Z',
+            durationMs: 60000,
+          },
           appliedFilters: { capabilities: ['switch'] },
           gapDetected: false,
           largestGapMs: 0,
@@ -192,7 +196,11 @@ describe('DeviceService.getDeviceEvents', () => {
         metadata: {
           totalCount: 2,
           hasMore: false,
-          dateRange: { earliest: '2025-11-27T12:00:00Z', latest: '2025-11-27T12:01:00Z', durationMs: 60000 },
+          dateRange: {
+            earliest: '2025-11-27T12:00:00Z',
+            latest: '2025-11-27T12:01:00Z',
+            durationMs: 60000,
+          },
           appliedFilters: { attributes: ['temperature'] },
           gapDetected: false,
           largestGapMs: 0,
@@ -222,7 +230,11 @@ describe('DeviceService.getDeviceEvents', () => {
         metadata: {
           totalCount: 2,
           hasMore: false,
-          dateRange: { earliest: '2025-11-27T10:00:00Z', latest: '2025-11-27T12:00:00Z', durationMs: 7200000 },
+          dateRange: {
+            earliest: '2025-11-27T10:00:00Z',
+            latest: '2025-11-27T12:00:00Z',
+            durationMs: 7200000,
+          },
           appliedFilters: {},
           gapDetected: true,
           gaps: [
@@ -285,7 +297,11 @@ describe('DeviceService.getDeviceEvents', () => {
         metadata: {
           totalCount: 1,
           hasMore: false,
-          dateRange: { earliest: '2025-11-27T12:00:00Z', latest: '2025-11-27T12:01:00Z', durationMs: 60000 },
+          dateRange: {
+            earliest: '2025-11-27T12:00:00Z',
+            latest: '2025-11-27T12:01:00Z',
+            durationMs: 60000,
+          },
           appliedFilters: {},
           gapDetected: false,
           largestGapMs: 0,
@@ -346,7 +362,11 @@ describe('DeviceService.getDeviceEvents', () => {
         metadata: {
           totalCount: 100,
           hasMore: true, // More events available
-          dateRange: { earliest: '2025-11-27T12:00:00Z', latest: '2025-11-27T12:01:00Z', durationMs: 60000 },
+          dateRange: {
+            earliest: '2025-11-27T12:00:00Z',
+            latest: '2025-11-27T12:01:00Z',
+            durationMs: 60000,
+          },
           appliedFilters: {},
           gapDetected: false,
           largestGapMs: 0,
@@ -377,7 +397,11 @@ describe('DeviceService.getDeviceEvents', () => {
         metadata: {
           totalCount: 5,
           hasMore: false,
-          dateRange: { earliest: '2025-11-27T12:00:00Z', latest: '2025-11-27T12:04:00Z', durationMs: 240000 },
+          dateRange: {
+            earliest: '2025-11-27T12:00:00Z',
+            latest: '2025-11-27T12:04:00Z',
+            durationMs: 240000,
+          },
           appliedFilters: {},
           gapDetected: false,
           largestGapMs: 60000, // Just 1 minute
@@ -401,9 +425,9 @@ describe('DeviceService.getDeviceEvents', () => {
       const apiError = new Error('SmartThings API unavailable');
       (mockSmartThingsService.getDeviceEvents as Mock).mockRejectedValue(apiError);
 
-      await expect(
-        deviceService.getDeviceEvents(createDeviceId('device-123'), {})
-      ).rejects.toThrow(DeviceServiceError);
+      await expect(deviceService.getDeviceEvents(createDeviceId('device-123'), {})).rejects.toThrow(
+        DeviceServiceError
+      );
     });
 
     it('should include context in DeviceServiceError', async () => {
@@ -431,9 +455,9 @@ describe('DeviceService.getDeviceEvents', () => {
       const sdkError = new Error('Unauthorized: Invalid API token');
       (mockSmartThingsService.getDeviceEvents as Mock).mockRejectedValue(sdkError);
 
-      await expect(
-        deviceService.getDeviceEvents(createDeviceId('device-123'), {})
-      ).rejects.toThrow(DeviceServiceError);
+      await expect(deviceService.getDeviceEvents(createDeviceId('device-123'), {})).rejects.toThrow(
+        DeviceServiceError
+      );
     });
 
     it('should handle network errors with retry indication', async () => {
@@ -441,9 +465,9 @@ describe('DeviceService.getDeviceEvents', () => {
       const networkError = new Error('ECONNREFUSED');
       (mockSmartThingsService.getDeviceEvents as Mock).mockRejectedValueOnce(networkError);
 
-      await expect(
-        deviceService.getDeviceEvents(createDeviceId('device-123'), {})
-      ).rejects.toThrow(DeviceServiceError);
+      await expect(deviceService.getDeviceEvents(createDeviceId('device-123'), {})).rejects.toThrow(
+        DeviceServiceError
+      );
 
       // Verify the error was attempted
       expect(mockSmartThingsService.getDeviceEvents).toHaveBeenCalledTimes(1);
@@ -473,7 +497,11 @@ describe('DeviceService.getDeviceEvents', () => {
         metadata: {
           totalCount: 1,
           hasMore: false,
-          dateRange: { earliest: '2025-11-27T12:00:00Z', latest: '2025-11-27T12:01:00Z', durationMs: 60000 },
+          dateRange: {
+            earliest: '2025-11-27T12:00:00Z',
+            latest: '2025-11-27T12:01:00Z',
+            durationMs: 60000,
+          },
           appliedFilters: {
             capabilities: ['temperatureMeasurement'],
             attributes: ['temperature'],
@@ -509,7 +537,11 @@ describe('DeviceService.getDeviceEvents', () => {
         metadata: {
           totalCount: 2,
           hasMore: false,
-          dateRange: { earliest: '2025-11-27T12:00:00Z', latest: '2025-11-27T12:01:00Z', durationMs: 60000 },
+          dateRange: {
+            earliest: '2025-11-27T12:00:00Z',
+            latest: '2025-11-27T12:01:00Z',
+            durationMs: 60000,
+          },
           appliedFilters: { capabilities: ['switch', 'temperatureMeasurement'] },
           gapDetected: false,
           largestGapMs: 0,
@@ -533,7 +565,11 @@ describe('DeviceService.getDeviceEvents', () => {
         metadata: {
           totalCount: 1,
           hasMore: false,
-          dateRange: { earliest: '2025-11-27T12:00:00Z', latest: '2025-11-27T12:01:00Z', durationMs: 60000 },
+          dateRange: {
+            earliest: '2025-11-27T12:00:00Z',
+            latest: '2025-11-27T12:01:00Z',
+            durationMs: 60000,
+          },
           appliedFilters: { capabilities: ['switch'] },
           gapDetected: false,
           largestGapMs: 0,
@@ -586,7 +622,11 @@ describe('DeviceService.getDeviceEvents', () => {
         metadata: {
           totalCount: 1,
           hasMore: false,
-          dateRange: { earliest: '2025-11-27T10:00:00Z', latest: '2025-11-27T12:00:00Z', durationMs: 7200000 },
+          dateRange: {
+            earliest: '2025-11-27T10:00:00Z',
+            latest: '2025-11-27T12:00:00Z',
+            durationMs: 7200000,
+          },
           appliedFilters: {},
           gapDetected: true,
           gaps: [
