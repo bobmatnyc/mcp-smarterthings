@@ -1,0 +1,101 @@
+
+> @bobmatnyc/mcp-smarterthings@0.7.0 build
+> bash scripts/build.sh
+
+[0;34m[INFO][0m Starting build process (mode: production)...
+[0;34m[INFO][0m Running pre-build validation...
+[0;34m[INFO][0m Running type check...
+
+> @bobmatnyc/mcp-smarterthings@0.7.0 typecheck /Users/masa/Projects/mcp-smartthings
+> tsc --noEmit
+
+src/services/__tests__/DeviceService.events.test.ts(17,1): error TS6133: 'DeviceId' is declared but its value is never read.
+src/services/__tests__/DeviceService.events.test.ts(20,32): error TS2307: Cannot find module '../../types/type-helpers.js' or its corresponding type declarations.
+src/services/__tests__/DeviceService.events.test.ts(157,9): error TS2741: Property 'dateRange' is missing in type '{ totalCount: number; hasMore: false; appliedFilters: { capabilities: string[]; }; gapDetected: false; largestGapMs: number; reachedRetentionLimit: false; }' but required in type 'DeviceEventMetadata'.
+src/services/__tests__/DeviceService.events.test.ts(192,9): error TS2741: Property 'dateRange' is missing in type '{ totalCount: number; hasMore: false; appliedFilters: { attributes: string[]; }; gapDetected: false; largestGapMs: number; reachedRetentionLimit: false; }' but required in type 'DeviceEventMetadata'.
+src/services/__tests__/DeviceService.events.test.ts(221,9): error TS2741: Property 'dateRange' is missing in type '{ totalCount: number; hasMore: false; appliedFilters: {}; gapDetected: true; gaps: { gapStart: number; gapEnd: number; durationMs: number; durationText: string; likelyConnectivityIssue: true; }[]; largestGapMs: number; reachedRetentionLimit: false; }' but required in type 'DeviceEventMetadata'.
+src/services/__tests__/DeviceService.events.test.ts(248,14): error TS2532: Object is possibly 'undefined'.
+src/services/__tests__/DeviceService.events.test.ts(249,14): error TS2532: Object is possibly 'undefined'.
+src/services/__tests__/DeviceService.events.test.ts(283,9): error TS2741: Property 'dateRange' is missing in type '{ totalCount: number; hasMore: false; appliedFilters: {}; gapDetected: false; largestGapMs: number; reachedRetentionLimit: true; }' but required in type 'DeviceEventMetadata'.
+src/services/__tests__/DeviceService.events.test.ts(343,9): error TS2741: Property 'dateRange' is missing in type '{ totalCount: number; hasMore: true; appliedFilters: {}; gapDetected: false; largestGapMs: number; reachedRetentionLimit: false; }' but required in type 'DeviceEventMetadata'.
+src/services/__tests__/DeviceService.events.test.ts(373,9): error TS2741: Property 'dateRange' is missing in type '{ totalCount: number; hasMore: false; appliedFilters: {}; gapDetected: false; largestGapMs: number; reachedRetentionLimit: false; }' but required in type 'DeviceEventMetadata'.
+src/services/__tests__/DeviceService.events.test.ts(468,9): error TS2741: Property 'dateRange' is missing in type '{ totalCount: number; hasMore: false; appliedFilters: { capabilities: string[]; attributes: string[]; }; gapDetected: false; largestGapMs: number; reachedRetentionLimit: false; }' but required in type 'DeviceEventMetadata'.
+src/services/__tests__/DeviceService.events.test.ts(503,9): error TS2741: Property 'dateRange' is missing in type '{ totalCount: number; hasMore: false; appliedFilters: { capabilities: string[]; }; gapDetected: false; largestGapMs: number; reachedRetentionLimit: false; }' but required in type 'DeviceEventMetadata'.
+src/services/__tests__/DeviceService.events.test.ts(526,9): error TS2741: Property 'dateRange' is missing in type '{ totalCount: number; hasMore: false; appliedFilters: { capabilities: string[]; }; gapDetected: false; largestGapMs: number; reachedRetentionLimit: false; }' but required in type 'DeviceEventMetadata'.
+src/services/__tests__/DeviceService.events.test.ts(578,9): error TS2741: Property 'dateRange' is missing in type '{ totalCount: number; hasMore: false; appliedFilters: {}; gapDetected: true; gaps: { gapStart: number; gapEnd: number; durationMs: number; durationText: string; likelyConnectivityIssue: true; }[]; largestGapMs: number; reachedRetentionLimit: false; }' but required in type 'DeviceEventMetadata'.
+src/services/__tests__/DiagnosticWorkflow.integration.test.ts(64,55): error TS2554: Expected 0 arguments, but got 1.
+src/services/__tests__/DiagnosticWorkflow.integration.test.ts(87,32): error TS2345: Argument of type 'DeviceInfo' is not assignable to parameter of type 'UnifiedDevice'.
+  Type 'DeviceInfo' is missing the following properties from type 'UnifiedDevice': id, platform, platformDeviceId, online
+src/services/__tests__/DiagnosticWorkflow.integration.test.ts(89,27): error TS2339: Property 'addDevice' does not exist on type 'SemanticIndex'.
+src/services/__tests__/DiagnosticWorkflow.integration.test.ts(408,9): error TS2322: Type '"device_health"' is not assignable to type 'DiagnosticIntent'.
+src/services/__tests__/DiagnosticWorkflow.patterns.test.ts(355,14): error TS2532: Object is possibly 'undefined'.
+src/services/__tests__/DiagnosticWorkflow.patterns.test.ts(463,21): error TS2532: Object is possibly 'undefined'.
+src/services/__tests__/DiagnosticWorkflow.patterns.test.ts(536,21): error TS2532: Object is possibly 'undefined'.
+src/services/__tests__/DiagnosticWorkflow.patterns.test.ts(594,23): error TS2532: Object is possibly 'undefined'.
+src/services/__tests__/DiagnosticWorkflow.patterns.test.ts(595,21): error TS2532: Object is possibly 'undefined'.
+src/services/__tests__/DiagnosticWorkflow.patterns.test.ts(710,21): error TS2532: Object is possibly 'undefined'.
+src/services/__tests__/SemanticIndex.test.ts(61,20): error TS2304: Cannot find name 'SWITCH'.
+src/services/__tests__/SemanticIndex.test.ts(61,28): error TS2304: Cannot find name 'TEMPERATURE_SENSOR'.
+src/services/__tests__/SemanticIndex.test.ts(151,24): error TS2304: Cannot find name 'MOTION_SENSOR'.
+src/services/__tests__/SemanticIndex.test.ts(151,39): error TS2304: Cannot find name 'BATTERY'.
+src/services/__tests__/SemanticIndex.test.ts(216,26): error TS2304: Cannot find name 'SWITCH'.
+src/services/__tests__/SemanticIndex.test.ts(216,34): error TS2304: Cannot find name 'DIMMER'.
+src/services/__tests__/SemanticIndex.test.ts(233,59): error TS2322: Type 'string[]' is not assignable to type 'string | number | boolean | SparseVector | null'.
+  Property 'indices' is missing in type 'string[]' but required in type 'SparseVector'.
+src/services/__tests__/SemanticIndex.test.ts(253,77): error TS2322: Type 'string[]' is not assignable to type 'string | number | boolean | SparseVector | null'.
+  Property 'indices' is missing in type 'string[]' but required in type 'SparseVector'.
+src/services/__tests__/SemanticIndex.test.ts(276,54): error TS2322: Type 'string[]' is not assignable to type 'string | number | boolean | SparseVector | null'.
+  Property 'indices' is missing in type 'string[]' but required in type 'SparseVector'.
+src/services/__tests__/SemanticIndex.test.ts(294,57): error TS2345: Argument of type '{ ids: string[][]; distances: number[][]; metadatas: { name: string; platform: Platform; }[][]; documents: string[][]; }' is not assignable to parameter of type 'QueryResult<Metadata>'.
+  Type '{ ids: string[][]; distances: number[][]; metadatas: { name: string; platform: Platform; }[][]; documents: string[][]; }' is missing the following properties from type 'QueryResult<Metadata>': embeddings, include, uris, rows
+src/services/__tests__/SemanticIndex.test.ts(315,57): error TS2345: Argument of type '{ ids: string[][]; distances: number[][]; metadatas: { name: string; online: true; }[][]; documents: string[][]; }' is not assignable to parameter of type 'QueryResult<Metadata>'.
+  Type '{ ids: string[][]; distances: number[][]; metadatas: { name: string; online: true; }[][]; documents: string[][]; }' is missing the following properties from type 'QueryResult<Metadata>': embeddings, include, uris, rows
+src/services/__tests__/SemanticIndex.test.ts(353,57): error TS2345: Argument of type '{ ids: never[][]; distances: never[][]; metadatas: never[][]; documents: never[][]; }' is not assignable to parameter of type 'QueryResult<Metadata>'.
+  Type '{ ids: never[][]; distances: never[][]; metadatas: never[][]; documents: never[][]; }' is missing the following properties from type 'QueryResult<Metadata>': embeddings, include, uris, rows
+src/services/__tests__/SemanticIndex.test.ts(590,22): error TS2304: Cannot find name 'MOTION_SENSOR'.
+src/services/__tests__/SemanticIndex.test.ts(590,37): error TS2304: Cannot find name 'BATTERY'.
+src/services/adapters/__tests__/DeviceRegistryAdapter.test.ts(44,41): error TS2345: Argument of type 'string' is not assignable to parameter of type 'UniversalDeviceId'.
+  Type 'string' is not assignable to type '{ readonly __brand: "UniversalDeviceId"; }'.
+src/services/adapters/__tests__/DeviceRegistryAdapter.test.ts(83,41): error TS2345: Argument of type 'string' is not assignable to parameter of type 'UniversalDeviceId'.
+  Type 'string' is not assignable to type '{ readonly __brand: "UniversalDeviceId"; }'.
+src/services/adapters/__tests__/DeviceRegistryAdapter.test.ts(109,41): error TS2345: Argument of type 'string' is not assignable to parameter of type 'UniversalDeviceId'.
+  Type 'string' is not assignable to type '{ readonly __brand: "UniversalDeviceId"; }'.
+src/services/adapters/__tests__/DeviceRegistryAdapter.test.ts(135,41): error TS2345: Argument of type 'string' is not assignable to parameter of type 'UniversalDeviceId'.
+  Type 'string' is not assignable to type '{ readonly __brand: "UniversalDeviceId"; }'.
+src/services/adapters/__tests__/DeviceRegistryAdapter.test.ts(168,33): error TS2345: Argument of type 'string' is not assignable to parameter of type 'UniversalDeviceId'.
+  Type 'string' is not assignable to type '{ readonly __brand: "UniversalDeviceId"; }'.
+src/services/adapters/__tests__/DeviceRegistryAdapter.test.ts(169,33): error TS2345: Argument of type 'string' is not assignable to parameter of type 'UniversalDeviceId'.
+  Type 'string' is not assignable to type '{ readonly __brand: "UniversalDeviceId"; }'.
+src/services/adapters/__tests__/DeviceRegistryAdapter.test.ts(170,33): error TS2345: Argument of type 'string' is not assignable to parameter of type 'UniversalDeviceId'.
+  Type 'string' is not assignable to type '{ readonly __brand: "UniversalDeviceId"; }'.
+src/services/adapters/__tests__/DeviceRegistryAdapter.test.ts(208,42): error TS2345: Argument of type 'string' is not assignable to parameter of type 'UniversalDeviceId'.
+  Type 'string' is not assignable to type '{ readonly __brand: "UniversalDeviceId"; }'.
+src/services/adapters/__tests__/DeviceRegistryAdapter.test.ts(209,42): error TS2345: Argument of type 'string' is not assignable to parameter of type 'UniversalDeviceId'.
+  Type 'string' is not assignable to type '{ readonly __brand: "UniversalDeviceId"; }'.
+src/services/adapters/__tests__/DeviceRegistryAdapter.test.ts(240,14): error TS2532: Object is possibly 'undefined'.
+src/services/adapters/__tests__/DeviceRegistryAdapter.test.ts(331,41): error TS2345: Argument of type 'string' is not assignable to parameter of type 'UniversalDeviceId'.
+  Type 'string' is not assignable to type '{ readonly __brand: "UniversalDeviceId"; }'.
+src/services/adapters/__tests__/DeviceRegistryAdapter.test.ts(399,33): error TS2345: Argument of type 'string' is not assignable to parameter of type 'UniversalDeviceId'.
+  Type 'string' is not assignable to type '{ readonly __brand: "UniversalDeviceId"; }'.
+src/services/adapters/__tests__/DeviceRegistryAdapter.test.ts(400,33): error TS2345: Argument of type 'string' is not assignable to parameter of type 'UniversalDeviceId'.
+  Type 'string' is not assignable to type '{ readonly __brand: "UniversalDeviceId"; }'.
+src/services/adapters/__tests__/DeviceRegistryAdapter.test.ts(401,33): error TS2345: Argument of type 'string' is not assignable to parameter of type 'UniversalDeviceId'.
+  Type 'string' is not assignable to type '{ readonly __brand: "UniversalDeviceId"; }'.
+src/services/adapters/__tests__/DeviceRegistryAdapter.test.ts(402,33): error TS2345: Argument of type 'string' is not assignable to parameter of type 'UniversalDeviceId'.
+  Type 'string' is not assignable to type '{ readonly __brand: "UniversalDeviceId"; }'.
+src/services/adapters/__tests__/DeviceRegistryAdapter.test.ts(425,14): error TS2532: Object is possibly 'undefined'.
+src/services/adapters/__tests__/SemanticIndexAdapter.test.ts(76,43): error TS2304: Cannot find name 'Platform'.
+src/services/adapters/__tests__/SemanticIndexAdapter.test.ts(318,14): error TS2532: Object is possibly 'undefined'.
+src/services/adapters/DeviceRegistryAdapter.ts(232,37): error TS2345: Argument of type 'string' is not assignable to parameter of type 'UniversalDeviceId'.
+  Type 'string' is not assignable to type '{ readonly __brand: "UniversalDeviceId"; }'.
+src/services/adapters/DeviceRegistryAdapter.ts(270,29): error TS2345: Argument of type 'string' is not assignable to parameter of type 'UniversalDeviceId'.
+  Type 'string' is not assignable to type '{ readonly __brand: "UniversalDeviceId"; }'.
+src/services/adapters/SemanticIndexAdapter.ts(78,23): error TS2304: Cannot find name 'toUnifiedDevice'.
+src/services/adapters/SemanticIndexAdapter.ts(136,25): error TS2304: Cannot find name 'toUnifiedDevice'.
+src/services/adapters/SemanticIndexAdapter.ts(205,23): error TS2304: Cannot find name 'toUnifiedDevice'.
+src/services/adapters/SemanticIndexAdapter.ts(262,11): error TS6133: 'startTime' is declared but its value is never read.
+src/services/transformers/__tests__/integration.test.ts(140,12): error TS2532: Object is possibly 'undefined'.
+src/services/transformers/__tests__/integration.test.ts(141,12): error TS2532: Object is possibly 'undefined'.
+src/services/transformers/__tests__/integration.test.ts(142,12): error TS2532: Object is possibly 'undefined'.
+ ELIFECYCLE  Command failed with exit code 2.
+[0;31m[ERROR][0m Type checking failed!

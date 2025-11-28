@@ -122,8 +122,8 @@ describe('DiagnosticWorkflow - Pattern Detection', () => {
           totalCount: 2,
           hasMore: false,
           dateRange: {
-            earliest: mockEvents[0]!.time,
-            latest: mockEvents[1]!.time,
+            earliest: mockEvents[0].time,
+            latest: mockEvents[1].time,
             durationMs: 5000,
           },
           appliedFilters: {},
@@ -179,8 +179,8 @@ describe('DiagnosticWorkflow - Pattern Detection', () => {
           totalCount: 2,
           hasMore: false,
           dateRange: {
-            earliest: mockEvents[0]!.time,
-            latest: mockEvents[1]!.time,
+            earliest: mockEvents[0].time,
+            latest: mockEvents[1].time,
             durationMs: 3000,
           },
           appliedFilters: {},
@@ -230,8 +230,8 @@ describe('DiagnosticWorkflow - Pattern Detection', () => {
           totalCount: 2,
           hasMore: false,
           dateRange: {
-            earliest: mockEvents[0]!.time,
-            latest: mockEvents[1]!.time,
+            earliest: mockEvents[0].time,
+            latest: mockEvents[1].time,
             durationMs: 14400000,
           },
           appliedFilters: {},
@@ -284,8 +284,8 @@ describe('DiagnosticWorkflow - Pattern Detection', () => {
           totalCount: 2,
           hasMore: false,
           dateRange: {
-            earliest: mockEvents[0]!.time,
-            latest: mockEvents[1]!.time,
+            earliest: mockEvents[0].time,
+            latest: mockEvents[1].time,
             durationMs: 900000,
           },
           appliedFilters: {},
@@ -352,7 +352,7 @@ describe('DiagnosticWorkflow - Pattern Detection', () => {
       expect(report.diagnosticContext.relatedIssues).toBeDefined();
       // Should return normal pattern for empty events
       expect(report.diagnosticContext.relatedIssues!.length).toBeGreaterThan(0);
-      expect(report.diagnosticContext.relatedIssues?.[0]?.type).toBe('normal');
+      expect(report.diagnosticContext.relatedIssues![0].type).toBe('normal');
     });
   });
 
@@ -371,8 +371,8 @@ describe('DiagnosticWorkflow - Pattern Detection', () => {
           totalCount: 1,
           hasMore: false,
           dateRange: {
-            earliest: mockEvents[0]!.time,
-            latest: mockEvents[0]!.time,
+            earliest: mockEvents[0].time,
+            latest: mockEvents[0].time,
             durationMs: 0,
           },
           appliedFilters: {},
@@ -459,8 +459,8 @@ describe('DiagnosticWorkflow - Pattern Detection', () => {
           totalCount: 8,
           hasMore: false,
           dateRange: {
-            earliest: mockEvents[0]!.time,
-            latest: mockEvents[7]!.time,
+            earliest: mockEvents[0].time,
+            latest: mockEvents[7].time,
             durationMs: 21000,
           },
           appliedFilters: {},
@@ -532,8 +532,8 @@ describe('DiagnosticWorkflow - Pattern Detection', () => {
           totalCount: 4,
           hasMore: false,
           dateRange: {
-            earliest: mockEvents[0]!.time,
-            latest: mockEvents[3]!.time,
+            earliest: mockEvents[0].time,
+            latest: mockEvents[3].time,
             durationMs: 1800000,
           },
           appliedFilters: {},
@@ -591,8 +591,8 @@ describe('DiagnosticWorkflow - Pattern Detection', () => {
           totalCount: 2,
           hasMore: false,
           dateRange: {
-            earliest: alcoveEvents[0]!.time,
-            latest: alcoveEvents[1]!.time,
+            earliest: alcoveEvents[0].time,
+            latest: alcoveEvents[1].time,
             durationMs: 3000,
           },
           appliedFilters: {},
@@ -654,8 +654,8 @@ describe('DiagnosticWorkflow - Pattern Detection', () => {
           totalCount: 2,
           hasMore: false,
           dateRange: {
-            earliest: mockEvents[0]!.time,
-            latest: mockEvents[1]!.time,
+            earliest: mockEvents[0].time,
+            latest: mockEvents[1].time,
             durationMs: 4000,
           },
           appliedFilters: {},
@@ -706,8 +706,8 @@ describe('DiagnosticWorkflow - Pattern Detection', () => {
           totalCount: 100,
           hasMore: false,
           dateRange: {
-            earliest: mockEvents[0]!.time,
-            latest: mockEvents[99]!.time,
+            earliest: mockEvents[0].time,
+            latest: mockEvents[99].time,
             durationMs: 5940000,
           },
           appliedFilters: {},

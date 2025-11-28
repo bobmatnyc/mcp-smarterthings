@@ -31,6 +31,10 @@
  * - Framework should recommend: Check automations, review motion sensor
  */
 
+// Load environment variables FIRST before any imports
+import dotenv from 'dotenv';
+dotenv.config();
+
 import { SmartThingsService } from './src/smartthings/client.js';
 import { DeviceRegistry } from './src/abstract/DeviceRegistry.js';
 import { IntentClassifier } from './src/services/IntentClassifier.js';
