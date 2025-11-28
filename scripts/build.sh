@@ -130,7 +130,7 @@ fi
 
 # Build
 log_info "Building TypeScript project..."
-if ! pnpm run build; then
+if ! pnpm run build:tsc; then
   log_error "Build failed!"
   exit 1
 fi

@@ -871,12 +871,30 @@ Always cite web search sources and provide confidence levels for diagnoses.`;
       // Fetch devices
       const devicesResult = await this.mcpClient.callTool('list_devices', {});
       const devicesText = devicesResult.content.find((c) => c.type === 'text')?.text ?? '[]';
-      const devices = JSON.parse(devicesText);
+
+      // Parse devices with fallback for formatted text
+      let devices: any[];
+      try {
+        devices = JSON.parse(devicesText);
+      } catch {
+        // Fallback: Extract JSON array from formatted text (e.g., "Found 184 devices\n[...]")
+        const jsonMatch = devicesText.match(/\[[\s\S]*\]/);
+        devices = jsonMatch ? JSON.parse(jsonMatch[0]) : [];
+      }
 
       // Fetch scenes
       const scenesResult = await this.mcpClient.callTool('list_scenes', {});
       const scenesText = scenesResult.content.find((c) => c.type === 'text')?.text ?? '[]';
-      const scenes = JSON.parse(scenesText);
+
+      // Parse scenes with fallback for formatted text
+      let scenes: any[];
+      try {
+        scenes = JSON.parse(scenesText);
+      } catch {
+        // Fallback: Extract JSON array from formatted text (e.g., "Found 10 scenes\n[...]")
+        const jsonMatch = scenesText.match(/\[[\s\S]*\]/);
+        scenes = jsonMatch ? JSON.parse(jsonMatch[0]) : [];
+      }
 
       // Group devices by room
       const roomMap = new Map<
