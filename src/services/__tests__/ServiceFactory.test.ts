@@ -11,10 +11,16 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ServiceFactory } from '../ServiceFactory.js';
 import type { SmartThingsService } from '../../smartthings/client.js';
-import type { IDeviceService, ILocationService, ISceneService } from '../interfaces.js';
+import type {
+  IDeviceService,
+  ILocationService,
+  ISceneService,
+  IAutomationService,
+} from '../interfaces.js';
 
 describe('ServiceFactory', () => {
   let mockSmartThingsService: SmartThingsService;
+  let mockAutomationService: IAutomationService;
 
   beforeEach(() => {
     mockSmartThingsService = {
@@ -37,6 +43,16 @@ describe('ServiceFactory', () => {
       executeScene: vi.fn().mockResolvedValue(undefined),
       findSceneByName: vi.fn().mockResolvedValue({ sceneId: 'test', sceneName: 'Test Scene' }),
     } as unknown as SmartThingsService;
+
+    // Create mock AutomationService for ServiceFactory mock support tests
+    mockAutomationService = {
+      listRules: vi.fn().mockResolvedValue([]),
+      getRuleDetails: vi.fn().mockResolvedValue({}),
+      createRule: vi.fn().mockResolvedValue({ ruleId: 'test-rule' }),
+      updateRule: vi.fn().mockResolvedValue({}),
+      deleteRule: vi.fn().mockResolvedValue(undefined),
+      executeRule: vi.fn().mockResolvedValue(undefined),
+    } as unknown as IAutomationService;
   });
 
   describe('Individual Service Creation', () => {
@@ -139,11 +155,13 @@ describe('ServiceFactory', () => {
 
       const services = ServiceFactory.createServicesWithMocks(mockSmartThingsService, {
         deviceService: mockDeviceService,
+        automationService: mockAutomationService,
       });
 
       expect(services.deviceService).toBe(mockDeviceService);
       expect(services.locationService).toBeDefined();
       expect(services.sceneService).toBeDefined();
+      expect(services.automationService).toBe(mockAutomationService);
     });
 
     it('should create services with all mocks', () => {
@@ -181,19 +199,24 @@ describe('ServiceFactory', () => {
         deviceService: mockDeviceService,
         locationService: mockLocationService,
         sceneService: mockSceneService,
+        automationService: mockAutomationService,
       });
 
       expect(services.deviceService).toBe(mockDeviceService);
       expect(services.locationService).toBe(mockLocationService);
       expect(services.sceneService).toBe(mockSceneService);
+      expect(services.automationService).toBe(mockAutomationService);
     });
 
     it('should use real services when no mocks provided', () => {
-      const services = ServiceFactory.createServicesWithMocks(mockSmartThingsService, {});
+      const services = ServiceFactory.createServicesWithMocks(mockSmartThingsService, {
+        automationService: mockAutomationService,
+      });
 
       expect(services.deviceService).toBeDefined();
       expect(services.locationService).toBeDefined();
       expect(services.sceneService).toBeDefined();
+      expect(services.automationService).toBe(mockAutomationService);
     });
   });
 

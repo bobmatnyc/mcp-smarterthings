@@ -13,9 +13,11 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ServiceContainer } from '../ServiceContainer.js';
 import type { SmartThingsService } from '../../smartthings/client.js';
+import type { SmartThingsAdapter } from '../../platforms/smartthings/SmartThingsAdapter.js';
 
 describe('ServiceContainer', () => {
   let mockSmartThingsService: SmartThingsService;
+  let mockSmartThingsAdapter: SmartThingsAdapter;
   let container: ServiceContainer;
 
   beforeEach(() => {
@@ -41,7 +43,22 @@ describe('ServiceContainer', () => {
       findSceneByName: vi.fn().mockResolvedValue({ sceneId: 'test', sceneName: 'Test Scene' }),
     } as unknown as SmartThingsService;
 
-    container = new ServiceContainer(mockSmartThingsService);
+    // Create mock SmartThingsAdapter for AutomationService
+    mockSmartThingsAdapter = {
+      platform: 'smartthings',
+      platformName: 'SmartThings',
+      version: '1.0.0',
+      discoverDevices: vi.fn().mockResolvedValue([]),
+      getDeviceState: vi.fn().mockResolvedValue({ capabilities: {} }),
+      executeCommand: vi.fn().mockResolvedValue({ success: true }),
+      listRules: vi.fn().mockResolvedValue([]),
+      getRuleDetails: vi.fn().mockResolvedValue({}),
+      createRule: vi.fn().mockResolvedValue({ ruleId: 'test-rule' }),
+      updateRule: vi.fn().mockResolvedValue({}),
+      deleteRule: vi.fn().mockResolvedValue(undefined),
+    } as unknown as SmartThingsAdapter;
+
+    container = new ServiceContainer(mockSmartThingsService, mockSmartThingsAdapter);
   });
 
   describe('Service Creation', () => {
