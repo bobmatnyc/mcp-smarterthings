@@ -123,3 +123,7 @@ venv.bak/
 venv/
 virtualenv/
 wheels/
+
+# Claude MPM agent runtime files
+.claude/agents/.dependency_cache
+.claude/agents/.mpm_deployment_state
