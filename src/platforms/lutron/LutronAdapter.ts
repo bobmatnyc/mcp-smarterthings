@@ -1250,8 +1250,8 @@ export class LutronAdapter extends EventEmitter implements IDeviceAdapter {
     device: LutronDevice,
     command: DeviceCommand
   ): Promise<void> {
-    if (command.command === 'setLevel' && command.parameters?.level !== undefined) {
-      const level = denormalizeLevel(command.parameters.level as number);
+    if (command.command === 'setLevel' && command.parameters?.['level'] !== undefined) {
+      const level = denormalizeLevel(command.parameters['level'] as number);
       await this.bridge!.setDimmerLevel(deviceId, level);
     } else {
       throw new CommandExecutionError(`Invalid dimmer command: ${command.command}`, {
@@ -1270,8 +1270,8 @@ export class LutronAdapter extends EventEmitter implements IDeviceAdapter {
     device: LutronDevice,
     command: DeviceCommand
   ): Promise<void> {
-    if (command.parameters?.position !== undefined) {
-      const position = denormalizeLevel(command.parameters.position as number);
+    if (command.parameters?.['position'] !== undefined) {
+      const position = denormalizeLevel(command.parameters['position'] as number);
       await this.bridge!.setShadePosition(deviceId, position);
     } else {
       throw new CommandExecutionError(`Invalid shade command: ${command.command}`, {
@@ -1290,8 +1290,8 @@ export class LutronAdapter extends EventEmitter implements IDeviceAdapter {
     device: LutronDevice,
     command: DeviceCommand
   ): Promise<void> {
-    if (command.parameters?.speed !== undefined) {
-      const speed = mapFanSpeed(command.parameters.speed as number);
+    if (command.parameters?.['speed'] !== undefined) {
+      const speed = mapFanSpeed(command.parameters['speed'] as number);
       await this.bridge!.setFanSpeed(deviceId, speed);
     } else {
       throw new CommandExecutionError(`Invalid fan command: ${command.command}`, {
@@ -1392,7 +1392,7 @@ export class LutronAdapter extends EventEmitter implements IDeviceAdapter {
   private applyFilters(devices: UnifiedDevice[], filters: DeviceFilters): UnifiedDevice[] {
     return devices.filter((device) => {
       // Room filter
-      if (filters.roomId && device.platformSpecific?.area !== filters.roomId) {
+      if (filters.roomId && device.platformSpecific?.['area'] !== filters.roomId) {
         return false;
       }
 
@@ -1425,7 +1425,7 @@ export class LutronAdapter extends EventEmitter implements IDeviceAdapter {
       }
 
       // Device type filter
-      if (filters.deviceType && device.platformSpecific?.type !== filters.deviceType) {
+      if (filters.deviceType && device.platformSpecific?.['type'] !== filters.deviceType) {
         return false;
       }
 

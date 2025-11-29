@@ -10,8 +10,8 @@ export const VERSION = '0.7.2';
 export const BUILD_INFO = {
   version: VERSION,
   buildDate: new Date().toISOString(),
-  gitCommit: process.env.GIT_COMMIT || 'unknown',
-  gitBranch: process.env.GIT_BRANCH || 'unknown',
+  gitCommit: process.env['GIT_COMMIT'] || 'unknown',
+  gitBranch: process.env['GIT_BRANCH'] || 'unknown',
 } as const;
 
 /**

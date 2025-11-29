@@ -872,8 +872,8 @@ export class TuyaAdapter extends EventEmitter implements IDeviceAdapter {
       const deviceCountByRoom = new Map<string, number>();
 
       for (const device of devices) {
-        if (device.platformSpecific?.room_id) {
-          const roomId = device.platformSpecific.room_id as string;
+        if (device.platformSpecific?.['room_id']) {
+          const roomId = device.platformSpecific['room_id'] as string;
           deviceCountByRoom.set(roomId, (deviceCountByRoom.get(roomId) ?? 0) + 1);
         }
       }
@@ -1168,58 +1168,58 @@ export class TuyaAdapter extends EventEmitter implements IDeviceAdapter {
         break;
 
       case DeviceCapability.DIMMER:
-        if (command.command === 'setLevel' && command.parameters?.level !== undefined) {
+        if (command.command === 'setLevel' && command.parameters?.['level'] !== undefined) {
           // Set brightness level (denormalize from 0-100 to 0-1000)
           dpCommands.push({
             code: primaryDP,
-            value: denormalizeBrightness(command.parameters.level as number),
+            value: denormalizeBrightness(command.parameters['level'] as number),
           });
         }
         break;
 
       case DeviceCapability.COLOR:
-        if (command.parameters?.color) {
+        if (command.parameters?.['color']) {
           // Set color (HSV format expected)
           dpCommands.push({
             code: primaryDP,
-            value: command.parameters.color,
+            value: command.parameters['color'],
           });
         }
         break;
 
       case DeviceCapability.COLOR_TEMPERATURE:
-        if (command.parameters?.temperature !== undefined) {
+        if (command.parameters?.['temperature'] !== undefined) {
           dpCommands.push({
             code: primaryDP,
-            value: command.parameters.temperature,
+            value: command.parameters['temperature'],
           });
         }
         break;
 
       case DeviceCapability.SHADE:
-        if (command.parameters?.position !== undefined) {
+        if (command.parameters?.['position'] !== undefined) {
           // Set shade position (0-100%)
           dpCommands.push({
             code: primaryDP,
-            value: command.parameters.position,
+            value: command.parameters['position'],
           });
         }
         break;
 
       case DeviceCapability.THERMOSTAT:
-        if (command.parameters?.temperature !== undefined) {
+        if (command.parameters?.['temperature'] !== undefined) {
           dpCommands.push({
             code: primaryDP,
-            value: command.parameters.temperature,
+            value: command.parameters['temperature'],
           });
         }
         break;
 
       case DeviceCapability.FAN:
-        if (command.parameters?.speed !== undefined) {
+        if (command.parameters?.['speed'] !== undefined) {
           dpCommands.push({
             code: primaryDP,
-            value: command.parameters.speed,
+            value: command.parameters['speed'],
           });
         }
         break;
@@ -1244,7 +1244,7 @@ export class TuyaAdapter extends EventEmitter implements IDeviceAdapter {
   private applyFilters(devices: UnifiedDevice[], filters: DeviceFilters): UnifiedDevice[] {
     return devices.filter((device) => {
       // Room filter
-      if (filters.roomId && device.platformSpecific?.room_id !== filters.roomId) {
+      if (filters.roomId && device.platformSpecific?.['room_id'] !== filters.roomId) {
         return false;
       }
 
@@ -1271,7 +1271,7 @@ export class TuyaAdapter extends EventEmitter implements IDeviceAdapter {
       // Device type filter (category)
       if (
         filters.deviceType &&
-        device.platformSpecific?.category !== filters.deviceType
+        device.platformSpecific?.['category'] !== filters.deviceType
       ) {
         return false;
       }
