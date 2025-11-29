@@ -68,7 +68,7 @@ describe('Scene Tools', () => {
 
       const result = await handleListScenesByRoom({ roomName: 'Living Room' });
 
-      expect(result.isError).toBeUndefined();
+      expect(result.isError).toBe(false);
       expect(result.content).toHaveLength(1);
 
       const textContent = result.content.find((c) => c.type === 'text');
@@ -90,7 +90,7 @@ describe('Scene Tools', () => {
 
       const result = await handleListScenesByRoom({ roomName: 'Living Room' });
 
-      expect(result.isError).toBeUndefined();
+      expect(result.isError).toBe(false);
       expect(result.content).toHaveLength(1);
 
       const textContent = result.content.find((c) => c.type === 'text');
@@ -146,7 +146,7 @@ describe('Scene Tools', () => {
 
       const result = await handleListScenesByRoom({ roomName: 'living' });
 
-      expect(result.isError).toBeUndefined();
+      expect(result.isError).toBe(false);
       const textContent = result.content.find((c) => c.type === 'text');
       expect(textContent?.text).toContain('Living Room');
 
@@ -159,7 +159,7 @@ describe('Scene Tools', () => {
 
       const result = await handleListScenesByRoom({ roomName: 'Living Room' });
 
-      expect(result.isError).toBeUndefined();
+      expect(result.isError).toBe(false);
       const textContent = result.content.find((c) => c.type === 'text');
       expect(textContent?.text).toContain('Last Executed:');
     });
@@ -178,7 +178,7 @@ describe('Scene Tools', () => {
 
       const result = await handleListScenesByRoom({ roomName: 'Living Room' });
 
-      expect(result.isError).toBeUndefined();
+      expect(result.isError).toBe(false);
       const textContent = result.content.find((c) => c.type === 'text');
       expect(textContent?.text).toContain('New Scene');
       expect(textContent?.text).not.toContain('Last Executed:');
@@ -190,7 +190,7 @@ describe('Scene Tools', () => {
 
       const result = await handleListScenesByRoom({ roomName: 'Living Room' });
 
-      expect(result.isError).toBeUndefined();
+      expect(result.isError).toBe(false);
       const textContent = result.content.find((c) => c.type === 'text');
       expect(textContent?.text).toMatch(/Movie Time.*🎬/);
       expect(textContent?.text).toMatch(/Bright Lights.*💡/);

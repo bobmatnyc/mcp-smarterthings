@@ -74,6 +74,7 @@ describe('handleGetDeviceEvents', () => {
       gapDetected: false,
       largestGapMs: 0,
       reachedRetentionLimit: false,
+      gaps: [],
       ...overrides?.metadata,
     },
     summary: `Found ${events.length} events`,
@@ -163,7 +164,7 @@ describe('handleGetDeviceEvents', () => {
         expect.arrayContaining([
           expect.objectContaining({
             type: 'text',
-            text: expect.stringContaining('500'),
+            text: expect.stringContaining('limit'),
           }),
         ])
       );
@@ -275,7 +276,7 @@ describe('handleGetDeviceEvents', () => {
       // Check for structured data
       const textContent = result.content.find((c) => c.type === 'text');
       expect(textContent?.text).toContain('Living Room Light');
-      expect(textContent?.text).toContain('2 events');
+      expect(textContent?.text).toContain('Total Events: 2');
     });
 
     it('should format response text for LLM readability', async () => {
@@ -327,11 +328,13 @@ describe('handleGetDeviceEvents', () => {
 
       const textContent = result.content.find((c) => c.type === 'text');
       expect(textContent?.text).toContain('🔍 Gap Detected');
-      expect(textContent?.text).toContain('2 hours');
+      expect(textContent?.text).toContain('2h');
       expect(textContent?.text).toContain('Connectivity Issue');
     });
 
     it('should include retention warnings in response text', async () => {
+      // Use an absolute startTime that's older than 7 days to trigger retention warning
+      const eightDaysAgo = new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString();
       const mockResult = createMockResult([createMockEvent()], {
         metadata: {
           totalCount: 1,
@@ -352,7 +355,7 @@ describe('handleGetDeviceEvents', () => {
 
       const result = await handleGetDeviceEvents({
         deviceId: '12345678-1234-1234-1234-123456789abc',
-        startTime: '30d', // Exceeds retention
+        startTime: eightDaysAgo, // Exceeds 7-day limit (gets adjusted, triggers warning)
       });
 
       expect(result.isError).toBe(false);
@@ -606,18 +609,26 @@ describe('handleGetDeviceEvents', () => {
     });
 
     it('should format multiple gaps correctly', async () => {
-      const mockResult = createMockResult([createMockEvent()], {
+      // Create 4 events with 1-hour gaps between them to produce multiple "1h" gap mentions
+      const mockEvents = [
+        createMockEvent({ time: '2025-11-27T12:00:00Z', epoch: 1732708800000 }), // Latest
+        createMockEvent({ time: '2025-11-27T11:00:00Z', epoch: 1732705200000 }), // -1h
+        createMockEvent({ time: '2025-11-27T10:00:00Z', epoch: 1732701600000 }), // -2h
+        createMockEvent({ time: '2025-11-27T09:00:00Z', epoch: 1732698000000 }), // -3h (earliest)
+      ];
+
+      const mockResult = createMockResult(mockEvents, {
         metadata: {
-          totalCount: 1,
+          totalCount: 4,
           hasMore: false,
           dateRange: {
-            earliest: '2025-11-27T10:00:00Z',
+            earliest: '2025-11-27T09:00:00Z',
             latest: '2025-11-27T12:00:00Z',
-            durationMs: 7200000,
+            durationMs: 10800000, // 3 hours
           },
           appliedFilters: {},
           gapDetected: true,
-          largestGapMs: 3600000,
+          largestGapMs: 3600000, // 1 hour
           reachedRetentionLimit: false,
         },
       });
@@ -633,7 +644,7 @@ describe('handleGetDeviceEvents', () => {
 
       const textContent = result.content.find((c) => c.type === 'text');
       expect(textContent?.text).toContain('🔍 Detected Gaps');
-      expect((textContent?.text.match(/1 hour/g) || []).length).toBeGreaterThanOrEqual(2);
+      expect((textContent?.text.match(/1h/g) || []).length).toBeGreaterThanOrEqual(2);
     });
 
     it('should show filter information in summary', async () => {

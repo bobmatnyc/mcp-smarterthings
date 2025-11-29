@@ -62,7 +62,7 @@ describe('Device Query Tools', () => {
 
       const result = await handleListDevicesByRoom({ roomName: 'Living Room' });
 
-      expect(result.isError).toBeUndefined();
+      expect(result.isError).toBe(false);
       expect(result.content).toHaveLength(1);
 
       const textContent = result.content.find((c) => c.type === 'text');
@@ -80,7 +80,7 @@ describe('Device Query Tools', () => {
 
       const result = await handleListDevicesByRoom({ roomName: 'Living Room' });
 
-      expect(result.isError).toBeUndefined();
+      expect(result.isError).toBe(false);
       expect(result.content).toHaveLength(1);
 
       const textContent = result.content.find((c) => c.type === 'text');
@@ -134,7 +134,7 @@ describe('Device Query Tools', () => {
 
       const result = await handleListDevicesByRoom({ roomName: 'living' });
 
-      expect(result.isError).toBeUndefined();
+      expect(result.isError).toBe(false);
       const textContent = result.content.find((c) => c.type === 'text');
       expect(textContent?.text).toContain('Living Room');
 
@@ -147,7 +147,7 @@ describe('Device Query Tools', () => {
 
       const result = await handleListDevicesByRoom({ roomName: 'Living Room' });
 
-      expect(result.isError).toBeUndefined();
+      expect(result.isError).toBe(false);
       const textContent = result.content.find((c) => c.type === 'text');
       expect(textContent?.text).toContain('switch, switchLevel');
       expect(textContent?.text).toContain('temperatureMeasurement, thermostatMode');

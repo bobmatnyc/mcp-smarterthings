@@ -40,25 +40,39 @@ describe('DeviceService.getDeviceEvents', () => {
   const createMockResult = (
     events: DeviceEvent[],
     overrides?: Partial<DeviceEventResult>
-  ): DeviceEventResult => ({
-    events,
-    metadata: {
+  ): DeviceEventResult => {
+    // Ensure metadata always has gaps field
+    const metadata = {
       totalCount: events.length,
       hasMore: false,
       appliedFilters: {},
       gapDetected: false,
       largestGapMs: 0,
       reachedRetentionLimit: false,
+      gaps: [],
       dateRange: {
         earliest: events[0]?.time || new Date().toISOString(),
         latest: events[events.length - 1]?.time || new Date().toISOString(),
         durationMs: 0,
       },
       ...overrides?.metadata,
-    },
-    summary: `Found ${events.length} events`,
-    ...overrides,
-  });
+    };
+
+    // Ensure gaps is present even after spread
+    if (!('gaps' in metadata)) {
+      metadata.gaps = [];
+    }
+
+    // Destructure overrides to exclude metadata (we've already merged it)
+    const { metadata: _ignored, ...rest } = overrides || {};
+
+    return {
+      events,
+      metadata,
+      summary: `Found ${events.length} events`,
+      ...rest,
+    };
+  };
 
   beforeEach(() => {
     // Create mock SmartThingsService with all required methods
