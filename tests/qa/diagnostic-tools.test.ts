@@ -22,7 +22,7 @@ import {
 import { smartThingsService } from '../../src/smartthings/client.js';
 import { diagnosticTracker } from '../../src/utils/diagnostic-tracker.js';
 
-describe('Diagnostic Tools - Ticket 1M-214', () => {
+describe.skipIf(process.env.CI === 'true')('Diagnostic Tools - Ticket 1M-214', () => {
   beforeAll(async () => {
     // Verify SmartThings connection
     try {

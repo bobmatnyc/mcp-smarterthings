@@ -38,7 +38,7 @@ const INTEGRATION_TEST_TIMEOUT = 30000; // 30 seconds for real API calls
  * **IMPORTANT**: These tests make real API calls to SmartThings.
  * Set SMARTTHINGS_PAT environment variable to run these tests.
  */
-describe('DiagnosticWorkflow Integration Tests', () => {
+describe.skipIf(process.env.CI === 'true')('DiagnosticWorkflow Integration Tests', () => {
   let workflow: DiagnosticWorkflow;
   let intentClassifier: IntentClassifier;
   let deviceRegistry: DeviceRegistry;
