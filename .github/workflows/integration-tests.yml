@@ -1,0 +1,185 @@
+name: Integration Tests
+
+# Trigger on push to main, PRs, and manual runs
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch: # Allow manual trigger from GitHub UI
+  schedule:
+    # Run daily at 2 AM UTC to catch regressions
+    - cron: '0 2 * * *'
+
+jobs:
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+      fail-fast: false # Continue testing other versions even if one fails
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build project
+        run: pnpm run build:tsc
+        env:
+          SKIP_VALIDATION: true
+          SKIP_TESTS: true
+
+      - name: Run integration tests
+        run: CI=true pnpm test
+        env:
+          CI: true
+          NODE_ENV: test
+          # Use test token for CI environment (real API not needed)
+          SMARTTHINGS_PAT: ${{ secrets.SMARTTHINGS_PAT || 'test-token-for-ci' }}
+          LOG_LEVEL: error
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-node-${{ matrix.node-version }}
+          path: |
+            coverage/
+            **/*.test.log
+          retention-days: 7
+          if-no-files-found: ignore
+
+      - name: Generate test summary
+        if: always()
+        run: |
+          echo "### Integration Test Results 🧪" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Node Version:** ${{ matrix.node-version }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Status:** ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Integration tests validate:" >> $GITHUB_STEP_SUMMARY
+          echo "- MCP protocol compliance" >> $GITHUB_STEP_SUMMARY
+          echo "- API response validation" >> $GITHUB_STEP_SUMMARY
+          echo "- Rate limit handling" >> $GITHUB_STEP_SUMMARY
+          echo "- Diagnostic workflows" >> $GITHUB_STEP_SUMMARY
+
+  test-coverage:
+    name: Test Coverage Report
+    runs-on: ubuntu-latest
+    needs: integration-tests
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build project
+        run: pnpm run build:tsc
+        env:
+          SKIP_VALIDATION: true
+          SKIP_TESTS: true
+
+      - name: Run tests with coverage
+        run: pnpm run test:coverage
+        env:
+          CI: true
+          NODE_ENV: test
+          SMARTTHINGS_PAT: test-token-for-coverage
+          LOG_LEVEL: error
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./coverage/coverage-final.json
+          flags: integration-tests
+          name: integration-tests-coverage
+          fail_ci_if_error: false
+
+      - name: Comment PR with coverage
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            let coverage = 'Coverage report not available';
+            try {
+              const summary = fs.readFileSync('./coverage/coverage-summary.json', 'utf8');
+              const data = JSON.parse(summary);
+              const total = data.total;
+              coverage = `
+              | Metric | Coverage |
+              |--------|----------|
+              | Lines | ${total.lines.pct}% |
+              | Statements | ${total.statements.pct}% |
+              | Functions | ${total.functions.pct}% |
+              | Branches | ${total.branches.pct}% |
+              `;
+            } catch (e) {
+              console.log('Could not read coverage summary:', e);
+            }
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## Test Coverage Report\n\n${coverage}`
+            });
+
+  verify-fixtures:
+    name: Verify Test Fixtures
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check for nock fixtures
+        run: |
+          echo "Checking for HTTP mocking fixtures..."
+          if find tests/integration -name "*.json" -o -name "*-fixture.ts" | grep -q .; then
+            echo "✅ Found test fixtures for mocking"
+          else
+            echo "⚠️ No fixture files found - tests may require live API"
+          fi
+
+      - name: Verify test setup
+        run: |
+          echo "Verifying test configuration..."
+          if [ -f "tests/setup.ts" ]; then
+            echo "✅ Test setup file exists"
+            grep -q "SMARTTHINGS_PAT" tests/setup.ts && echo "✅ PAT fallback configured"
+          else
+            echo "❌ Test setup file missing"
+            exit 1
+          fi
