@@ -1,0 +1,277 @@
+{
+  "items": [
+    {
+      "deviceId": "alcove-bedroom-light-001",
+      "name": "Bedroom Alcove Light",
+      "label": "Alcove Bedroom Light",
+      "deviceManufacturerCode": "SmartThings",
+      "locationId": "location-home-001",
+      "roomId": "room-bedroom-001",
+      "deviceTypeName": "Switch",
+      "components": [
+        {
+          "id": "main",
+          "label": "Main",
+          "capabilities": [
+            {
+              "id": "switch",
+              "version": 1
+            },
+            {
+              "id": "healthCheck",
+              "version": 1
+            },
+            {
+              "id": "refresh",
+              "version": 1
+            }
+          ],
+          "categories": [
+            {
+              "name": "Switch",
+              "categoryType": "manufacturer"
+            }
+          ]
+        }
+      ],
+      "dth": {
+        "deviceTypeId": "device-type-switch-001",
+        "deviceTypeName": "Switch",
+        "deviceNetworkType": "ZWAVE"
+      },
+      "type": "DTH",
+      "restrictionTier": 0,
+      "allowed": null,
+      "executingLocally": true
+    },
+    {
+      "deviceId": "thermostat-living-room-001",
+      "name": "Living Room Thermostat",
+      "label": "Living Room Climate Control",
+      "deviceManufacturerCode": "Ecobee",
+      "locationId": "location-home-001",
+      "roomId": "room-living-room-001",
+      "deviceTypeName": "Thermostat",
+      "components": [
+        {
+          "id": "main",
+          "label": "Main",
+          "capabilities": [
+            {
+              "id": "thermostat",
+              "version": 1
+            },
+            {
+              "id": "temperatureMeasurement",
+              "version": 1
+            },
+            {
+              "id": "relativeHumidityMeasurement",
+              "version": 1
+            },
+            {
+              "id": "thermostatMode",
+              "version": 1
+            },
+            {
+              "id": "thermostatFanMode",
+              "version": 1
+            },
+            {
+              "id": "thermostatHeatingSetpoint",
+              "version": 1
+            },
+            {
+              "id": "thermostatCoolingSetpoint",
+              "version": 1
+            }
+          ],
+          "categories": [
+            {
+              "name": "Thermostat",
+              "categoryType": "manufacturer"
+            }
+          ]
+        }
+      ],
+      "type": "VIPER",
+      "restrictionTier": 0,
+      "allowed": null,
+      "executingLocally": false
+    },
+    {
+      "deviceId": "front-door-lock-001",
+      "name": "Front Door Lock",
+      "label": "Main Entrance Lock",
+      "deviceManufacturerCode": "Schlage",
+      "locationId": "location-home-001",
+      "roomId": "room-entryway-001",
+      "deviceTypeName": "Z-Wave Lock",
+      "components": [
+        {
+          "id": "main",
+          "label": "Main",
+          "capabilities": [
+            {
+              "id": "lock",
+              "version": 1
+            },
+            {
+              "id": "battery",
+              "version": 1
+            },
+            {
+              "id": "tamperAlert",
+              "version": 1
+            },
+            {
+              "id": "lockCodes",
+              "version": 1
+            }
+          ],
+          "categories": [
+            {
+              "name": "Lock",
+              "categoryType": "manufacturer"
+            }
+          ]
+        }
+      ],
+      "dth": {
+        "deviceTypeId": "device-type-lock-001",
+        "deviceTypeName": "Z-Wave Lock",
+        "deviceNetworkType": "ZWAVE"
+      },
+      "type": "DTH",
+      "restrictionTier": 0,
+      "allowed": null,
+      "executingLocally": true
+    },
+    {
+      "deviceId": "motion-sensor-hallway-001",
+      "name": "Hallway Motion Sensor",
+      "label": "Hallway Motion",
+      "deviceManufacturerCode": "Samsung",
+      "locationId": "location-home-001",
+      "roomId": "room-hallway-001",
+      "deviceTypeName": "Motion Sensor",
+      "components": [
+        {
+          "id": "main",
+          "label": "Main",
+          "capabilities": [
+            {
+              "id": "motionSensor",
+              "version": 1
+            },
+            {
+              "id": "temperatureMeasurement",
+              "version": 1
+            },
+            {
+              "id": "battery",
+              "version": 1
+            }
+          ],
+          "categories": [
+            {
+              "name": "MotionSensor",
+              "categoryType": "manufacturer"
+            }
+          ]
+        }
+      ],
+      "type": "VIPER",
+      "restrictionTier": 0,
+      "allowed": null,
+      "executingLocally": false
+    },
+    {
+      "deviceId": "contact-sensor-window-001",
+      "name": "Bedroom Window Sensor",
+      "label": "Bedroom Window Contact",
+      "deviceManufacturerCode": "SmartThings",
+      "locationId": "location-home-001",
+      "roomId": "room-bedroom-001",
+      "deviceTypeName": "Multipurpose Sensor",
+      "components": [
+        {
+          "id": "main",
+          "label": "Main",
+          "capabilities": [
+            {
+              "id": "contactSensor",
+              "version": 1
+            },
+            {
+              "id": "temperatureMeasurement",
+              "version": 1
+            },
+            {
+              "id": "battery",
+              "version": 1
+            },
+            {
+              "id": "threeAxis",
+              "version": 1
+            }
+          ],
+          "categories": [
+            {
+              "name": "ContactSensor",
+              "categoryType": "manufacturer"
+            }
+          ]
+        }
+      ],
+      "type": "VIPER",
+      "restrictionTier": 0,
+      "allowed": null,
+      "executingLocally": false
+    },
+    {
+      "deviceId": "dimmer-kitchen-001",
+      "name": "Kitchen Dimmer",
+      "label": "Kitchen Overhead Lights",
+      "deviceManufacturerCode": "Leviton",
+      "locationId": "location-home-001",
+      "roomId": "room-kitchen-001",
+      "deviceTypeName": "Dimmer Switch",
+      "components": [
+        {
+          "id": "main",
+          "label": "Main",
+          "capabilities": [
+            {
+              "id": "switch",
+              "version": 1
+            },
+            {
+              "id": "switchLevel",
+              "version": 1
+            },
+            {
+              "id": "refresh",
+              "version": 1
+            }
+          ],
+          "categories": [
+            {
+              "name": "Light",
+              "categoryType": "manufacturer"
+            }
+          ]
+        }
+      ],
+      "dth": {
+        "deviceTypeId": "device-type-dimmer-001",
+        "deviceTypeName": "Dimmer Switch",
+        "deviceNetworkType": "ZWAVE"
+      },
+      "type": "DTH",
+      "restrictionTier": 0,
+      "allowed": null,
+      "executingLocally": true
+    }
+  ]
+}

@@ -1,0 +1,65 @@
+{
+  "deviceId": "alcove-bedroom-light-001",
+  "name": "Bedroom Alcove Light",
+  "label": "Alcove Bedroom Light",
+  "deviceManufacturerCode": "SmartThings",
+  "locationId": "location-home-001",
+  "roomId": "room-bedroom-001",
+  "deviceTypeName": "Switch",
+  "components": [
+    {
+      "id": "main",
+      "label": "Main",
+      "capabilities": [
+        {
+          "id": "switch",
+          "version": 1
+        },
+        {
+          "id": "healthCheck",
+          "version": 1
+        },
+        {
+          "id": "refresh",
+          "version": 1
+        }
+      ],
+      "categories": [
+        {
+          "name": "Switch",
+          "categoryType": "manufacturer"
+        }
+      ]
+    }
+  ],
+  "profile": {
+    "id": "profile-switch-001"
+  },
+  "dth": {
+    "deviceTypeId": "device-type-switch-001",
+    "deviceTypeName": "Switch",
+    "deviceNetworkType": "ZWAVE",
+    "completedSetup": true,
+    "networkSecurityLevel": "ZWAVE_S2_AUTHENTICATED",
+    "hubId": "hub-home-001"
+  },
+  "type": "DTH",
+  "restrictionTier": 0,
+  "allowed": null,
+  "executingLocally": true,
+  "childDevices": [],
+  "viper": null,
+  "ir": null,
+  "ocf": null,
+  "lan": null,
+  "zigbee": null,
+  "zwave": {
+    "networkSecurityLevel": "ZWAVE_S2_AUTHENTICATED",
+    "eui64": "00:11:22:33:44:55:66:77"
+  },
+  "matter": null,
+  "irCode": null,
+  "ble": null,
+  "bleD2D": null,
+  "mobile": null
+}
