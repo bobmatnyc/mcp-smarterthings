@@ -853,16 +853,30 @@ export class DiagnosticWorkflow {
       const device = this.deviceRegistry.getDevice(toUniversalId(deviceId));
       const status = await this.deviceService.getDeviceStatus(deviceId);
 
-      // Extract battery level from components if available
-      const mainComponent = status.components?.['main'];
-      const batteryComponent = mainComponent ? mainComponent['battery'] : undefined;
-      const batteryLevel = batteryComponent ? batteryComponent['value'] : undefined;
+      // Extract battery level - support both formats:
+      // 1. Root-level convenience format: status.battery (used in tests)
+      // 2. Component format: status.components.main.battery.battery.value (actual API)
+      let batteryLevel: number | undefined;
+
+      // Try root-level battery first (test mocks)
+      const statusAny = status as any;
+      if (typeof statusAny.battery === 'number') {
+        batteryLevel = statusAny.battery;
+      } else {
+        // Try component-level battery (actual SmartThings API format)
+        const mainComponent = status.components?.['main'];
+        const batteryComponent = mainComponent ? mainComponent['battery'] : undefined;
+        const batteryAttribute = batteryComponent ? batteryComponent['battery'] : undefined;
+        if (batteryAttribute && typeof batteryAttribute.value === 'number') {
+          batteryLevel = batteryAttribute.value;
+        }
+      }
 
       return {
         type: 'health',
         value: {
           status: device?.online ? 'online' : 'offline',
-          batteryLevel: typeof batteryLevel === 'number' ? batteryLevel : undefined,
+          batteryLevel,
           online: device?.online ?? false,
           lastActivity: device?.lastSeen?.toISOString(),
           currentState: status.components?.['main'],

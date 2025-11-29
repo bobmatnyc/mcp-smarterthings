@@ -725,6 +725,15 @@ export class SmartThingsService implements ISmartThingsService {
       reachedRetentionLimit: !!retentionWarning,
       gapDetected,
       largestGapMs,
+      gaps: gaps
+        ? gaps.map((gap) => ({
+            gapStart: new Date(gap.gapStart).getTime(),
+            gapEnd: new Date(gap.gapEnd).getTime(),
+            durationMs: gap.durationMs,
+            durationText: gap.durationText,
+            likelyConnectivityIssue: gap.likelyConnectivityIssue,
+          }))
+        : [],
     };
 
     // Step 6: Generate summary for LLM

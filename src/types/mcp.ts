@@ -13,6 +13,7 @@ export interface McpSuccessResponse<T = unknown> {
     type: 'text';
     text: string;
   }>;
+  isError?: false;
   data?: T;
 }
 
@@ -61,6 +62,7 @@ export function createMcpResponse<T = unknown>(text: string, data?: T): McpSucce
         text,
       },
     ],
+    isError: false,
     data,
   };
 }
