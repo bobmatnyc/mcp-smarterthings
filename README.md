@@ -6,6 +6,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.6%2B-blue)](https://www.typescriptlang.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-18%2B-green)](https://nodejs.org/)
+[![Integration Tests](https://github.com/bobmatnyc/mcp-smarterthings/actions/workflows/integration-tests.yml/badge.svg)](https://github.com/bobmatnyc/mcp-smarterthings/actions/workflows/integration-tests.yml)
 
 ---
 
